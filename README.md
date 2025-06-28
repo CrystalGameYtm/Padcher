@@ -1,5 +1,5 @@
 # Padcher
-Padcher это пачтер файлів BPS, IPS, ASM, який має простий інтерфейс. Which is pleasant to use
+Padcher is patcher file BPS, IPS, ASM(need asar), який має простий інтерфейс. Which is pleasant to use
 
 Padcher features:
 
