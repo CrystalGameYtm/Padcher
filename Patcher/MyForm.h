@@ -2,7 +2,7 @@
 
 #include "bps_patcher.h"  // Наша бібліотека для BPS
 #include "flips.hpp"      // Залишаємо для IPS
-
+#include "asm_patcher.h" // Наша бібліотека для ASM патчів
 #include <msclr/marshal_cppstd.h>
 #include <fstream> // Для читання файлів ефективніше
 
@@ -321,7 +321,27 @@ namespace Patcher {
 
 		}
 #pragma endregion
+		private: System::Void MyForm_Load(System::Object^ sender, System::EventArgs^ e) {
+			// Формуємо очікуваний шлях до asar.exe
+			String^ asarPath = Path::Combine(Application::StartupPath, "asar.exe");
 
+			// Перевіряємо, чи існує файл за цим шляхом
+			if (!File::Exists(asarPath)) {
+				// Якщо файлу немає, показуємо попередження
+				MessageBox::Show(
+					"Файл \"asar.exe\" не знайдено в папці з програмою.\n\n"
+					"Функція патчингу .asm файлів буде недоступна, доки ви не помістите asar.exe поруч із цим патчером.",
+					"Увага: відсутній компонент",
+					MessageBoxButtons::OK,
+					MessageBoxIcon::Warning
+				);
+
+				// Опціонально: можна вимкнути кнопку, якщо ви хочете жорстко заблокувати
+				// спроби патчингу без asar. Це робить UI більш зрозумілим.
+				// button1->Enabled = false; 
+				// labelStatus->Text = "Готовий (Asar недоступний)";
+			}
+		}
 	private: void ClearChecksumLabels() {
 		crcLabel->Text = "Файл не вибрано";
 		md5Label->Text = "Файл не вибрано";
@@ -395,8 +415,8 @@ namespace Patcher {
 
 	private: System::Void openpatch_Click(System::Object^ sender, System::EventArgs^ e) {
 		OpenFileDialog^ openFileDialog = gcnew OpenFileDialog();
-		openFileDialog->Filter = "All Patch Files (*.bps, *.ips)|*.bps;*.ips|All files (*.*)|*.*";
-		openFileDialog->Title = "Виберіть файл патчу";
+		openFileDialog->Filter = "All Supported Patches (*.ips, *.bps, *.asm)|*.ips;*.bps;*.asm|All files (*.*)|*.*";
+		openFileDialog->Title = "Виберіть файл патча";
 		if (openFileDialog->ShowDialog() == System::Windows::Forms::DialogResult::OK) {
 			textBox2->Text = openFileDialog->FileName;
 			String^ romPath = textBox1->Text;
@@ -439,47 +459,106 @@ namespace Patcher {
 			groupBox1->Text = "Інформація про файл";
 			return;
 		}
-
 		try {
-			std::string nativeRomPath = msclr::interop::marshal_as<std::string>(romPath);
-			std::string nativePatchPath = msclr::interop::marshal_as<std::string>(patchPath);
+			String^ extension = Path::GetExtension(patchPath)->ToLower();
 
-			byte_vector source_vec = read_file_native(nativeRomPath);
-			byte_vector patch_vec = read_file_native(nativePatchPath);
-			byte_vector target_vec;
+			if (extension == ".asm") {
+				// --- НОВА, НАДІЙНА ЛОГІКА ДЛЯ ASAR З CREATEPROCESS ---
+				File::Copy(romPath, outputPath, true);
+				String^ asarPath = Path::Combine(Application::StartupPath, "asar.exe");
 
-			bool validate_checksums = !this->ignoreChecksumsCheckbox->Checked;
+				if (!File::Exists(asarPath)) {
+					throw gcnew System::IO::FileNotFoundException("Не знайдено файл asar.exe!");
+				}
 
-			if (patch_vec.size() >= 5 && memcmp(patch_vec.data(), "PATCH", 5) == 0) {
-				std::string error = flips::apply_ips(patch_vec, source_vec, target_vec);
-				if (!error.empty()) {
-					throw std::runtime_error(error);
+				// Формуємо командну стрічку. Лапки необхідні!
+				String^ commandLine = String::Format("\"{0}\" \"{1}\" \"{2}\"", asarPath, patchPath, outputPath);
+
+				// Підготовка до запуску процесу
+				STARTUPINFOW si = { sizeof(si) };
+				PROCESS_INFORMATION pi = { 0 };
+
+				// Конвертуємо managed string в LPWSTR (широкі символи, Unicode)
+				wchar_t* lpCommandLine = (wchar_t*)System::Runtime::InteropServices::Marshal::StringToHGlobalUni(commandLine).ToPointer();
+
+				// Створюємо процес
+				BOOL success = CreateProcessW(
+					NULL,           // lpApplicationName - не використовуємо, передаємо все в командній стрічці
+					lpCommandLine,  // lpCommandLine - повна команда для запуску
+					NULL,           // lpProcessAttributes
+					NULL,           // lpThreadAttributes
+					FALSE,          // bInheritHandles
+					0,              // dwCreationFlags
+					NULL,           // lpEnvironment
+					NULL,           // lpCurrentDirectory
+					&si,            // lpStartupInfo
+					&pi             // lpProcessInformation
+				);
+
+				// Звільняємо пам'ять, виділену для стрічки
+				System::Runtime::InteropServices::Marshal::FreeHGlobal((IntPtr)lpCommandLine);
+
+				if (!success) {
+					throw gcnew Exception("Не вдалося запустити процес asar.exe. Помилка WinAPI: " + System::Runtime::InteropServices::Marshal::GetLastWin32Error());
+				}
+
+				// Чекаємо, поки процес Asar завершиться
+				WaitForSingleObject(pi.hProcess, INFINITE);
+
+				// Отримуємо код завершення процесу
+				DWORD exitCode;
+				GetExitCodeProcess(pi.hProcess, &exitCode);
+
+				// Закриваємо дескриптори процесу
+				CloseHandle(pi.hProcess);
+				CloseHandle(pi.hThread);
+
+				// Перевіряємо код завершення
+				if (exitCode != 0) {
+					throw gcnew Exception("Asar повідомив про помилку. Спробуйте запустити патч вручну з командного рядка для детальної інформації.");
 				}
 			}
-			else if (patch_vec.size() >= 4 && memcmp(patch_vec.data(), "BPS1", 4) == 0) {
-				target_vec = apply_bps_patch(source_vec, patch_vec, validate_checksums);
+
+			else if (extension == ".ips" || extension == ".bps") {
+				// --- Логіка для IPS/BPS (ваш старий код) ---
+				std::string nativeRomPath = msclr::interop::marshal_as<std::string>(romPath);
+				std::string nativePatchPath = msclr::interop::marshal_as<std::string>(patchPath);
+
+				byte_vector source_vec = read_file_native(nativeRomPath);
+				byte_vector patch_vec = read_file_native(nativePatchPath);
+				byte_vector target_vec;
+
+				if (extension == ".ips") {
+					// Використовуємо flips для IPS
+					std::string error = flips::apply_ips(patch_vec, source_vec, target_vec);
+					if (!error.empty()) throw std::runtime_error(error);
+				}
+				else { // .bps
+					// Використовуємо bps_patcher для BPS
+					target_vec = apply_bps_patch(source_vec, patch_vec, !this->ignoreChecksumsCheckbox->Checked);
+				}
+
+				// Записуємо результат у файл
+				array<Byte>^ targetManaged = gcnew array<Byte>(target_vec.size());
+				System::Runtime::InteropServices::Marshal::Copy((IntPtr)target_vec.data(), targetManaged, 0, (int)target_vec.size());
+				File::WriteAllBytes(outputPath, targetManaged);
 			}
 			else {
-				throw std::runtime_error("Невідомий або пошкоджений формат патча.");
+				throw gcnew NotSupportedException("Непідтримуваний формат патча: " + extension);
 			}
-
-			array<Byte>^ targetManaged = gcnew array<Byte>(target_vec.size());
-			System::Runtime::InteropServices::Marshal::Copy((IntPtr)target_vec.data(), targetManaged, 0, target_vec.size());
-			File::WriteAllBytes(outputPath, targetManaged);
 
 			groupBox1->Text = "Інформація про новий файл";
 			UpdateChecksums(outputPath);
-
-			MessageBox::Show("Патч успішно застосовано!", "Успіх", MessageBoxButtons::OK, MessageBoxIcon::Information);
+			MessageBox::Show("Патч \"" + Path::GetFileName(patchPath) + "\" успішно застосовано!", "Успіх", MessageBoxButtons::OK, MessageBoxIcon::Information);
 
 		}
 		catch (const std::exception& ex) {
 			String^ errorMessage = gcnew String(ex.what());
-			MessageBox::Show("Сталася помилка:\n" + errorMessage, "Помилка C++", MessageBoxButtons::OK, MessageBoxIcon::Error);
+			MessageBox::Show("Сталася помилка C++:\n" + errorMessage, "Помилка", MessageBoxButtons::OK, MessageBoxIcon::Error);
 			groupBox1->Text = "Інформація про файл (Помилка)";
 		}
 		catch (Exception^ ex) {
-			MessageBox::Show("Сталася помилка:\n" + ex->Message, "Помилка .NET", MessageBoxButtons::OK, MessageBoxIcon::Error);
+			MessageBox::Show("Сталася помилка .NET:\n" + ex->Message, "Помилка", MessageBoxButtons::OK, MessageBoxIcon::Error);
 			groupBox1->Text = "Інформація про файл (Помилка)";
 		}
 	}

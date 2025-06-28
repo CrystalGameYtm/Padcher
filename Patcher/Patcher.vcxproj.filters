@@ -21,15 +21,21 @@
     <ClCompile Include="bps_patcher.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="asm_patcher.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MyForm.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="flips.hpp">
+    <ClInclude Include="bps_patcher.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="bps_patcher.h">
+    <ClInclude Include="asm_patcher.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="flips.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
