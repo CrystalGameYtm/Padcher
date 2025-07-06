@@ -44,5 +44,8 @@
     <ClInclude Include="MultiPatch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PatcherLogic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

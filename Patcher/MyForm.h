@@ -311,6 +311,7 @@ namespace Patcher {
 			// 
 			// button2
 			// 
+			this->button2->Enabled = false;
 			this->button2->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12));
 			this->button2->Location = System::Drawing::Point(193, 371);
 			this->button2->Name = L"button2";
@@ -381,7 +382,7 @@ namespace Patcher {
 	private: String^ ComputeHash(Stream^ stream, HashAlgorithm^ hasher) {
 		array<Byte>^ hash = hasher->ComputeHash(stream);
 		StringBuilder^ sb = gcnew StringBuilder(hash->Length * 2);
-		for each (Byte b in hash) {
+		for each(Byte b in hash) {
 			sb->Append(b.ToString("x2"));
 		}
 		return sb->ToString()->ToUpper();
@@ -392,7 +393,7 @@ namespace Patcher {
 		stream->Read(buffer, 0, (int)stream->Length);
 
 		uint32_t crc = 0xFFFFFFFF;
-		for each (Byte b in buffer) {
+		for each(Byte b in buffer) {
 			crc ^= b;
 			for (int j = 0; j < 8; j++) {
 				uint32_t mask = -(crc & 1);
@@ -493,7 +494,6 @@ namespace Patcher {
 			String^ extension = Path::GetExtension(patchPath)->ToLower();
 
 			if (extension == ".asm") {
-				// --- НОВА, НАДІЙНА ЛОГІКА ДЛЯ ASAR З CREATEPROCESS ---
 				File::Copy(romPath, outputPath, true);
 				String^ asarPath = Path::Combine(Application::StartupPath, "asar.exe");
 
@@ -596,22 +596,36 @@ namespace Patcher {
 		bool isMultiPatchMode = this->checkmultipatch->Checked;
 
 		// Показуємо кнопку для MultiPatch і ховаємо для звичайного патчингу
-		this->button2->Visible = isMultiPatchMode;  // Кнопка "Open MultiPatch"
+		this->button2->Enabled = isMultiPatchMode;  // Кнопка "Open MultiPatch"
 
 		// Показуємо кнопку для звичайного патчингу і ховаємо для MultiPatch
-		this->button1->Visible = !isMultiPatchMode; // Кнопка "Пропатчити"
+		this->button1->Enabled = !isMultiPatchMode; // Кнопка "Пропатчити"
 
 		// Також варто вмикати/вимикати елементи, які не потрібні в режимі MultiPatch
 		this->textBox2->Enabled = !isMultiPatchMode;
 		this->openpatch->Enabled = !isMultiPatchMode;
 		this->label1->Enabled = !isMultiPatchMode;
 		this->ignoreChecksumsCheckbox->Enabled = !isMultiPatchMode;
+		this->textBox3->Enabled = !isMultiPatchMode;
+		this->opensave->Enabled = !isMultiPatchMode;
+		this->label3->Enabled = !isMultiPatchMode;
 	};
 	private: System::Void button2_Click(System::Object^ sender, System::EventArgs^ e) {
-		MultiPatch^ multiPatchForm = gcnew MultiPatch();
-		this->Hide();
-		multiPatchForm->ShowDialog();
-		this->Show();
-};
-};
-}
+		
+		String^ romPath = this->textBox1->Text;
+
+		if (String::IsNullOrWhiteSpace(romPath)) {
+			MessageBox::Show("Будь ласка, спочатку виберіть файл ROM-у.", "Помилка", MessageBoxButtons::OK, MessageBoxIcon::Warning);
+			return; // Виходимо з методу, якщо шлях порожній.
+		}
+
+			MultiPatch^ multiPatchForm = gcnew MultiPatch();
+			multiPatchForm->InitialRomPath = romPath;
+			this->Hide();
+			multiPatchForm->ShowDialog();
+			this->Show();
+	
+
+		};
+	};
+	}

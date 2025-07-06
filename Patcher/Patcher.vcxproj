@@ -153,6 +153,7 @@
     <ClInclude Include="MultiPatch.h">
       <FileType>CppForm</FileType>
     </ClInclude>
+    <ClInclude Include="PatcherLogic.h" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="MultiPatch.resx">
