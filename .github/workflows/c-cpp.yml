@@ -8,21 +8,25 @@ on:
 
 jobs:
   build:
+    # Запускаємо роботу на віртуальній машині з Windows
     runs-on: windows-latest
 
     steps:
+    # Крок 1: Завантажуємо код з репозиторію
     - name: Checkout repository
       uses: actions/checkout@v4
 
+    # Крок 2: Налаштовуємо MSBuild (компілятор Visual Studio)
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
 
+    # Крок 3: Збираємо проєкт (файл .sln)
+    # ВАЖЛИВО: Переконайтеся, що назва файлу 'Padcher.sln' є правильною.
     - name: Build Solution
       run: msbuild.exe Patcher.sln /p:Configuration=Release
 
-
-     - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: Patcher-Executable
-        path: Beta/Padcher.exe
+    - name: Upload Artifact
+       uses: actions/upload-artifact@v4
+       with:
+         name: Patcher-Executable
+        path: Patcher/Release/Padcher.exe
