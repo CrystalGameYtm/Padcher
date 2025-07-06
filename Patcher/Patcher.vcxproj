@@ -138,6 +138,7 @@
     <ClCompile Include="asm_patcher.cpp">
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">CompileAsCpp</CompileAs>
     </ClCompile>
+    <ClCompile Include="MultiPatch.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="bps_patcher.h" />
@@ -149,8 +150,14 @@
     <ClInclude Include="MyForm.h">
       <FileType>CppForm</FileType>
     </ClInclude>
+    <ClInclude Include="MultiPatch.h">
+      <FileType>CppForm</FileType>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="MultiPatch.resx">
+      <DependentUpon>MultiPatch.h</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="MyForm.resx">
       <DependentUpon>MyForm.h</DependentUpon>
     </EmbeddedResource>

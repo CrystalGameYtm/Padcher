@@ -1,5 +1,5 @@
 #pragma once
-
+#include "MultiPatch.h" // Підключаємо MultiPatch для роботи з кількома патчами
 #include "bps_patcher.h"  // Наша бібліотека для BPS
 #include "flips.hpp"      // Залишаємо для IPS
 #include "asm_patcher.h" // Наша бібліотека для ASM патчів
@@ -71,6 +71,9 @@ namespace Patcher {
 	private: System::Windows::Forms::Label^ labelRomMd5;
 	private: System::Windows::Forms::Label^ labelRomCrc32;
 
+	private: System::Windows::Forms::CheckBox^ checkmultipatch;
+	private: System::Windows::Forms::Button^ button2;
+
 	private:
 		System::ComponentModel::Container^ components;
 
@@ -95,6 +98,8 @@ namespace Patcher {
 			this->labelRomSha1 = (gcnew System::Windows::Forms::Label());
 			this->labelRomMd5 = (gcnew System::Windows::Forms::Label());
 			this->labelRomCrc32 = (gcnew System::Windows::Forms::Label());
+			this->checkmultipatch = (gcnew System::Windows::Forms::CheckBox());
+			this->button2 = (gcnew System::Windows::Forms::Button());
 			this->groupBox1->SuspendLayout();
 			this->SuspendLayout();
 			// 
@@ -279,7 +284,7 @@ namespace Patcher {
 			this->labelRomMd5->AutoSize = true;
 			this->labelRomMd5->Location = System::Drawing::Point(15, 48);
 			this->labelRomMd5->Name = L"labelRomMd5";
-			this->labelRomMd5->Size = System::Drawing::Size(39, 16);
+			this->labelRomMd5->Size = System::Drawing::Size(38, 16);
 			this->labelRomMd5->TabIndex = 1;
 			this->labelRomMd5->Text = L"MD5:";
 			// 
@@ -288,9 +293,32 @@ namespace Patcher {
 			this->labelRomCrc32->AutoSize = true;
 			this->labelRomCrc32->Location = System::Drawing::Point(15, 26);
 			this->labelRomCrc32->Name = L"labelRomCrc32";
-			this->labelRomCrc32->Size = System::Drawing::Size(53, 16);
+			this->labelRomCrc32->Size = System::Drawing::Size(52, 16);
 			this->labelRomCrc32->TabIndex = 0;
 			this->labelRomCrc32->Text = L"CRC32:";
+			// 
+			// checkmultipatch
+			// 
+			this->checkmultipatch->AutoSize = true;
+			this->checkmultipatch->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12));
+			this->checkmultipatch->Location = System::Drawing::Point(397, 81);
+			this->checkmultipatch->Name = L"checkmultipatch";
+			this->checkmultipatch->Size = System::Drawing::Size(102, 24);
+			this->checkmultipatch->TabIndex = 15;
+			this->checkmultipatch->Text = L"MultiPatch";
+			this->checkmultipatch->UseVisualStyleBackColor = true;
+			this->checkmultipatch->CheckedChanged += gcnew System::EventHandler(this, &MyForm::checkmultipatch_CheckedChanged);
+			// 
+			// button2
+			// 
+			this->button2->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12));
+			this->button2->Location = System::Drawing::Point(193, 371);
+			this->button2->Name = L"button2";
+			this->button2->Size = System::Drawing::Size(150, 42);
+			this->button2->TabIndex = 16;
+			this->button2->Text = L"Open MultiPatch";
+			this->button2->UseVisualStyleBackColor = true;
+			this->button2->Click += gcnew System::EventHandler(this, &MyForm::button2_Click);
 			// 
 			// MyForm
 			// 
@@ -298,6 +326,8 @@ namespace Patcher {
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
 			this->BackColor = System::Drawing::Color::Gainsboro;
 			this->ClientSize = System::Drawing::Size(511, 424);
+			this->Controls->Add(this->button2);
+			this->Controls->Add(this->checkmultipatch);
 			this->Controls->Add(this->groupBox1);
 			this->Controls->Add(this->ignoreChecksumsCheckbox);
 			this->Controls->Add(this->button1);
@@ -321,27 +351,27 @@ namespace Patcher {
 
 		}
 #pragma endregion
-		private: System::Void MyForm_Load(System::Object^ sender, System::EventArgs^ e) {
-			// Формуємо очікуваний шлях до asar.exe
-			String^ asarPath = Path::Combine(Application::StartupPath, "asar.exe");
+	private: System::Void MyForm_Load(System::Object^ sender, System::EventArgs^ e) {
+		// Формуємо очікуваний шлях до asar.exe
+		String^ asarPath = Path::Combine(Application::StartupPath, "asar.exe");
 
-			// Перевіряємо, чи існує файл за цим шляхом
-			if (!File::Exists(asarPath)) {
-				// Якщо файлу немає, показуємо попередження
-				MessageBox::Show(
-					"Файл \"asar.exe\" не знайдено в папці з програмою.\n\n"
-					"Функція патчингу .asm файлів буде недоступна, доки ви не помістите asar.exe поруч із цим патчером.",
-					"Увага: відсутній компонент",
-					MessageBoxButtons::OK,
-					MessageBoxIcon::Warning
-				);
+		// Перевіряємо, чи існує файл за цим шляхом
+		if (!File::Exists(asarPath)) {
+			// Якщо файлу немає, показуємо попередження
+			MessageBox::Show(
+				"Файл \"asar.exe\" не знайдено в папці з програмою.\n\n"
+				"Функція патчингу .asm файлів буде недоступна, доки ви не помістите asar.exe поруч із цим патчером.",
+				"Увага: відсутній компонент",
+				MessageBoxButtons::OK,
+				MessageBoxIcon::Warning
+			);
 
-				// Опціонально: можна вимкнути кнопку, якщо ви хочете жорстко заблокувати
-				// спроби патчингу без asar. Це робить UI більш зрозумілим.
-				// button1->Enabled = false; 
-				// labelStatus->Text = "Готовий (Asar недоступний)";
-			}
+			// Опціонально: можна вимкнути кнопку, якщо ви хочете жорстко заблокувати
+			// спроби патчингу без asar. Це робить UI більш зрозумілим.
+			// button1->Enabled = false; 
+			// labelStatus->Text = "Готовий (Asar недоступний)";
 		}
+	}
 	private: void ClearChecksumLabels() {
 		crcLabel->Text = "Файл не вибрано";
 		md5Label->Text = "Файл не вибрано";
@@ -562,5 +592,26 @@ namespace Patcher {
 			groupBox1->Text = "Інформація про файл (Помилка)";
 		}
 	}
+	private: System::Void checkmultipatch_CheckedChanged(System::Object^ sender, System::EventArgs^ e) {
+		bool isMultiPatchMode = this->checkmultipatch->Checked;
+
+		// Показуємо кнопку для MultiPatch і ховаємо для звичайного патчингу
+		this->button2->Visible = isMultiPatchMode;  // Кнопка "Open MultiPatch"
+
+		// Показуємо кнопку для звичайного патчингу і ховаємо для MultiPatch
+		this->button1->Visible = !isMultiPatchMode; // Кнопка "Пропатчити"
+
+		// Також варто вмикати/вимикати елементи, які не потрібні в режимі MultiPatch
+		this->textBox2->Enabled = !isMultiPatchMode;
+		this->openpatch->Enabled = !isMultiPatchMode;
+		this->label1->Enabled = !isMultiPatchMode;
+		this->ignoreChecksumsCheckbox->Enabled = !isMultiPatchMode;
 	};
+	private: System::Void button2_Click(System::Object^ sender, System::EventArgs^ e) {
+		MultiPatch^ multiPatchForm = gcnew MultiPatch();
+		this->Hide();
+		multiPatchForm->ShowDialog();
+		this->Show();
+};
+};
 }
