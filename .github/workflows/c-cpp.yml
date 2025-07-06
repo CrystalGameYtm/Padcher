@@ -23,7 +23,7 @@ jobs:
     # Крок 3: Збираємо проєкт (файл .sln)
     # ВАЖЛИВО: Переконайтеся, що назва файлу 'Padcher.sln' є правильною.
     - name: Build Solution
-      run: msbuild.exe Padcher.sln /p:Configuration=Release
+      run: msbuild.exe Patcher.sln /p:Configuration=Release
 
     # Крок 4 (Опціонально): Завантажити готову програму як артефакт
     # Це дозволить вам завантажити .exe файл прямо зі сторінки Actions.
