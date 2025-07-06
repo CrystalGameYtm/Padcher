@@ -10,13 +10,6 @@ jobs:
   build:
     runs-on: windows-latest
 
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-    - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v2
-    - name: Build Solution
-      run: msbuild.exe Patcher.sln /p:Configuration=Release
 
          steps:
     - name: Checkout repository
