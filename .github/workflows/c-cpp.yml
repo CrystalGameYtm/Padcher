@@ -18,13 +18,10 @@ jobs:
       uses: microsoft/setup-msbuild@v2
 
     - name: Build Solution
-      run: msbuild.exe Patcher.sln /p:Configuration=Release
-
-    - name: List files in the workspace
-      run: dir /s
+      run: msbuild.exe Patcher.sln /p:Configuration=Debug
     
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: Patcher-Executable
-        path: Patcher/Release/Patcher.exe
+        path: Patcher/x64/Debug/Patcher.exe
