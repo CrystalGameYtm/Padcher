@@ -10,8 +10,7 @@ jobs:
   build:
     runs-on: windows-latest
 
-
-         steps:
+    steps:
     - name: Checkout repository
       uses: actions/checkout@v4
 
@@ -21,7 +20,7 @@ jobs:
     - name: Build Solution
       run: msbuild.exe Patcher.sln /p:Configuration=Release
 
-    - name: List all files in the workspace
+    - name: List files in the workspace
       run: dir /s
     
     - name: Upload Artifact
