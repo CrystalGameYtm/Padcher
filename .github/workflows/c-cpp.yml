@@ -24,4 +24,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: Padcher-Executable
-        path: Padcher/Debug/Patcher.exe
+        path: x64/Debug/Patcher.exe
