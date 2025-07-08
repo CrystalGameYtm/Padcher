@@ -30,8 +30,8 @@ jobs:
     # A glob of the files to upload
         files: x64/Debug/Patcher.exe
     # The tag name of the release to upload to (if not specified then the release that triggered the workflow is used)
-        release-tag: Realese
+        release-tag: 1
     # The ID of the release to upload to (if not specified then the release that triggered the workflow is used)
-        release-id: beta
+        release-id: dev
     # secrets.GITHUB_TOKEN
         repo-token: $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
