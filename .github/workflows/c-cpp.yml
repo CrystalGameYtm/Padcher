@@ -22,12 +22,12 @@ jobs:
       with:
         name: Padcher-Executable
         path: x64/Debug/Patcher.exe
-    - name: Release Draft
-    uses: crs-k/release-draft@v0.7.2
-    with:
-        bump: prepatch    # Semver bump type. Options: major, minor, patch, premajor, preminor, prepatch, or prerelease.  Default level is patch. Only one version may be specified.
-        release-strategy: single
-        publish-strategy: manual
-             
+     - name: Draft New Release
+  # You may pin to the exact commit or the version.
+  # uses: samkbit/gh-action-ts-auto-release-draft@c1109bf2105f9513e6523df0e94014be247f3a7d
+  uses: samkbit/gh-action-ts-auto-release-draft@v1.0.0
+  with:
+    # The GITHUB_TOKEN used to authenticate to the current repository
+    repo-token: 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
     
           
