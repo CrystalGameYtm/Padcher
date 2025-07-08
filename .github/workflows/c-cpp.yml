@@ -25,12 +25,20 @@ jobs:
       with:
         name: Padcher-Executable
         path: x64/Debug/Patcher.exe
- - name: Release Draft
+                 - name: Release Draft
   # You may pin to the exact commit or the version.
   # uses: crs-k/release-draft@b232aaf8608c0ba7df6d7c6382fffa238230e9b1
   uses: crs-k/release-draft@v0.7.2
   with:
+    repo-token: # optional
     # Target of release. Default: default branch
-    commitish: beta
+    commitish: master
     # Semver bump type. Options: major, minor, patch, premajor, preminor, prepatch, or prerelease.  Default level is patch. Only one version may be specified.
     bump: prepatch
+    # See Release Strategy section for details.
+    release-strategy: single
+    # See Publish Strategy section for details.
+    publish-strategy: manual
+             
+    
+          
