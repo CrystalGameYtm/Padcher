@@ -38,3 +38,4 @@ jobs:
         files: 'x64/Debug/Patcher.exe'
         release-tag: dev
         repo-token: ${{ secrets.GITHUB_TOKEN }}
+        overwrite: true
