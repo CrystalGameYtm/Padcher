@@ -30,7 +30,7 @@ jobs:
     # A glob of the files to upload
         files: x64/Debug/Patcher.exe
     # The tag name of the release to upload to (if not specified then the release that triggered the workflow is used)
-        release-tag: # optional
+        release-tag: beta
     # The ID of the release to upload to (if not specified then the release that triggered the workflow is used)
         release-id: # optional
     # secrets.GITHUB_TOKEN
