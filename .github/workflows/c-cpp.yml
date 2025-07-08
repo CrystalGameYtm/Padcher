@@ -34,5 +34,4 @@ jobs:
     # The ID of the release to upload to (if not specified then the release that triggered the workflow is used)
         release-id: # optional
     # secrets.GITHUB_TOKEN
-        repo-token: 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
-          
+        repo-token: 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
