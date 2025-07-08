@@ -29,7 +29,6 @@ jobs:
     - name: Release Draft
     uses: crs-k/release-draft@v0.7.2
     with:
-      commitish: default
       bump: prepatch    # Semver bump type. Options: major, minor, patch, premajor, preminor, prepatch, or prerelease.  Default level is patch. Only one version may be specified.
       release-strategy: single
       publish-strategy: manual
