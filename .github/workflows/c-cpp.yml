@@ -22,6 +22,13 @@ jobs:
       with:
         name: Padcher-Executable
         path: x64/Debug/Patcher.exe
+    - name: Create or update Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: dev
+        name: "dev"
+        body: "Автоматична збірка для тестування."
+        prerelease: true # Позначити реліз як pre-release
     - name: Upload assets to a Release
   # You may pin to the exact commit or the version.
   # uses: AButler/upload-release-assets@45be2facf3acc71812c1c17b4cefef5f6e8cac8a
