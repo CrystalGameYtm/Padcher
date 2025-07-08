@@ -13,25 +13,21 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
-
     - name: Build Solution
       run: msbuild.exe Patcher.sln /p:Configuration=Debug
-    
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: Padcher-Executable
         path: x64/Debug/Patcher.exe
-        
     - name: Release Draft
     uses: crs-k/release-draft@v0.7.2
     with:
-      bump: prepatch    # Semver bump type. Options: major, minor, patch, premajor, preminor, prepatch, or prerelease.  Default level is patch. Only one version may be specified.
-      release-strategy: single
-      publish-strategy: manual
+        bump: prepatch    # Semver bump type. Options: major, minor, patch, premajor, preminor, prepatch, or prerelease.  Default level is patch. Only one version may be specified.
+        release-strategy: single
+        publish-strategy: manual
              
     
           
