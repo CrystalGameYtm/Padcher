@@ -22,11 +22,17 @@ jobs:
       with:
         name: Padcher-Executable
         path: x64/Debug/Patcher.exe
-     - name: Draft New Release
+     - name: Upload assets to a Release
   # You may pin to the exact commit or the version.
-  # uses: samkbit/gh-action-ts-auto-release-draft@c1109bf2105f9513e6523df0e94014be247f3a7d
-  uses: samkbit/gh-action-ts-auto-release-draft@v1.0.0
+  # uses: AButler/upload-release-assets@45be2facf3acc71812c1c17b4cefef5f6e8cac8a
+  uses: AButler/upload-release-assets@v3.0.1
   with:
-    # The GITHUB_TOKEN used to authenticate to the current repository
-    repo-token: 
+    # A glob of the files to upload
+    files: x64/Debug/Patcher.exe
+    # The tag name of the release to upload to (if not specified then the release that triggered the workflow is used)
+    release-tag: # optional
+    # The ID of the release to upload to (if not specified then the release that triggered the workflow is used)
+    release-id: # optional
+    # secrets.GITHUB_TOKEN
+    repo-token: ${{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}}
           
