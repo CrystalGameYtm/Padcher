@@ -28,6 +28,5 @@ jobs:
   uses: samkbit/gh-action-ts-auto-release-draft@v1.0.0
   with:
     # The GITHUB_TOKEN used to authenticate to the current repository
-    repo-token: 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
-    
+    repo-token: 
           
