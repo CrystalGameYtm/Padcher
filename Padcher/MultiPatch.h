@@ -2,7 +2,7 @@
 
 #include "PatcherLogic.h"
 
-namespace Patcher {
+namespace Padcher {
 
 	using namespace System;
 	using namespace System::ComponentModel;

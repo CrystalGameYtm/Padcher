@@ -7,7 +7,7 @@
 #include <msclr/marshal_cppstd.h>
 #include <fstream> 
 
-namespace Patcher {
+namespace Padcher {
 
 	using namespace System;
 	using namespace System::ComponentModel;
