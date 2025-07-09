@@ -22,16 +22,15 @@ jobs:
       with:
         name: Padcher-Executable
         path: x64/Debug/Patcher.exe
-    - name: Upload assets to a Release
-  # You may pin to the exact commit or the version.
-  # uses: AButler/upload-release-assets@45be2facf3acc71812c1c17b4cefef5f6e8cac8a
-      uses: AButler/upload-release-assets@v3.0.1
+    - name: Create Release and Upload Asset
+      uses: softprops/action-gh-release@v2
       with:
-    # A glob of the files to upload
+        # Шлях до файлів, які потрібно завантажити.
+        # Дія автоматично видалить старий Patcher.exe і завантажить новий.
         files: x64/Debug/Patcher.exe
-    # The tag name of the release to upload to (if not specified then the release that triggered the workflow is used)
-        release-tag: 1
-    # The ID of the release to upload to (if not specified then the release that triggered the workflow is used)
-        release-id: dev
-    # secrets.GITHUB_TOKEN
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        
+        # Решта ваших параметрів залишаються
+        tag_name: dev
+        name: "Dev Build"
+        body: "Автоматична збірка для тестування."
+        prerelease: true
