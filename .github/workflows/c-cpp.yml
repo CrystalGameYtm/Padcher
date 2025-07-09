@@ -16,21 +16,21 @@ jobs:
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
     - name: Build Solution
-      run: msbuild.exe Patcher.sln /p:Configuration=Debug
+      run: msbuild.exe Padcher.sln /p:Configuration=Debug
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: Padcher-Executable
-        path: x64/Debug/Patcher.exe
+        path: x64/Debug/Padcher.exe
     - name: Create Release and Upload Asset
       uses: softprops/action-gh-release@v2
       with:
         # Шлях до файлів, які потрібно завантажити.
         # Дія автоматично видалить старий Patcher.exe і завантажить новий.
-        files: x64/Debug/Patcher.exe
+        files: x64/Debug/Padcher.exe
         
         # Решта ваших параметрів залишаються
         tag_name: dev
         name: "Dev Build"
-        body: "Автоматична збірка для тестування."
+        body: "Auto Build Devoloper Build."
         prerelease: true

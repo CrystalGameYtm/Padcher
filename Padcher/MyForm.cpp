@@ -2,7 +2,7 @@
 using namespace System;
 using namespace System::Windows::Forms;
 
-// Атрибут STAThread є обов'язковим для програм Windows Forms
+// РђС‚СЂРёР±СѓС‚ STAThread С” РѕР±РѕРІ'СЏР·РєРѕРІРёРј РґР»СЏ РїСЂРѕРіСЂР°Рј Windows Forms
 [STAThreadAttribute]
 int main(array<String^>^ args) {
 	Application::EnableVisualStyles();

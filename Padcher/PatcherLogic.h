@@ -7,42 +7,42 @@
 #include <string>
 #include <vector>
 
-// Використовуємо стандартні простори імен, щоб не писати System::...
+// Р’РёРєРѕСЂРёСЃС‚РѕРІСѓС”РјРѕ СЃС‚Р°РЅРґР°СЂС‚РЅС– РїСЂРѕСЃС‚РѕСЂРё С–РјРµРЅ, С‰РѕР± РЅРµ РїРёСЃР°С‚Рё System::...
 using namespace System;
 using namespace System::IO;
 using namespace System::Security::Cryptography;
 using namespace System::Text;
 
-// --- ДОПОМІЖНІ ТИПИ ТА ФУНКЦІЇ, ЩО ПРАЦЮЮТЬ З НАТИВНИМ C++ ---
+// --- Р”РћРџРћРњР†Р–РќР† РўРРџР РўРђ Р¤РЈРќРљР¦Р†Р‡, Р©Рћ РџР РђР¦Р®Р®РўР¬ Р— РќРђРўРР’РќРРњ C++ ---
 
-// Визначаємо byte_vector, щоб не писати std::vector<unsigned char>
+// Р’РёР·РЅР°С‡Р°С”РјРѕ byte_vector, С‰РѕР± РЅРµ РїРёСЃР°С‚Рё std::vector<unsigned char>
 typedef std::vector<unsigned char> byte_vector;
 
-// Функція для читання файлу в нативний вектор байтів
+// Р¤СѓРЅРєС†С–СЏ РґР»СЏ С‡РёС‚Р°РЅРЅСЏ С„Р°Р№Р»Сѓ РІ РЅР°С‚РёРІРЅРёР№ РІРµРєС‚РѕСЂ Р±Р°Р№С‚С–РІ
 inline byte_vector read_file_native(const std::string& filepath) {
     std::ifstream file(filepath, std::ios::binary | std::ios::ate);
     if (!file) {
-        throw std::runtime_error("Не вдалося відкрити файл: " + filepath);
+        throw std::runtime_error("РќРµ РІРґР°Р»РѕСЃСЏ РІС–РґРєСЂРёС‚Рё С„Р°Р№Р»: " + filepath);
     }
     std::streamsize size = file.tellg();
     file.seekg(0, std::ios::beg);
     byte_vector buffer(size);
     if (!file.read(reinterpret_cast<char*>(buffer.data()), size)) {
-        throw std::runtime_error("Не вдалося прочитати файл: " + filepath);
+        throw std::runtime_error("РќРµ РІРґР°Р»РѕСЃСЏ РїСЂРѕС‡РёС‚Р°С‚Рё С„Р°Р№Р»: " + filepath);
     }
     return buffer;
 }
 
-// Функція для запису нативного вектора байтів у файл
+// Р¤СѓРЅРєС†С–СЏ РґР»СЏ Р·Р°РїРёСЃСѓ РЅР°С‚РёРІРЅРѕРіРѕ РІРµРєС‚РѕСЂР° Р±Р°Р№С‚С–РІ Сѓ С„Р°Р№Р»
 inline void write_file_native(const std::string& filepath, const byte_vector& data) {
     std::ofstream file(filepath, std::ios::binary);
     if (!file) {
-        throw std::runtime_error("Не вдалося створити або відкрити для запису файл: " + filepath);
+        throw std::runtime_error("РќРµ РІРґР°Р»РѕСЃСЏ СЃС‚РІРѕСЂРёС‚Рё Р°Р±Рѕ РІС–РґРєСЂРёС‚Рё РґР»СЏ Р·Р°РїРёСЃСѓ С„Р°Р№Р»: " + filepath);
     }
     file.write(reinterpret_cast<const char*>(data.data()), data.size());
 }
 
-// --- ФУНКЦІЇ ДЛЯ КОНТРОЛЬНИХ СУМ (працюють з .NET Streams) ---
+// --- Р¤РЈРќРљР¦Р†Р‡ Р”Р›РЇ РљРћРќРўР РћР›Р¬РќРРҐ РЎРЈРњ (РїСЂР°С†СЋСЋС‚СЊ Р· .NET Streams) ---
 
 inline String^ ComputeHash(Stream^ stream, HashAlgorithm^ hasher) {
     array<Byte>^ hash = hasher->ComputeHash(stream);
@@ -69,15 +69,15 @@ inline String^ ComputeCrc32(Stream^ stream) {
 }
 
 
-// --- ГОЛОВНА ФУНКЦІЯ ПАТЧИНГУ (НОВА) ---
+// --- Р“РћР›РћР’РќРђ Р¤РЈРќРљР¦Р†РЇ РџРђРўР§РРќР“РЈ (РќРћР’Рђ) ---
 
-// Ця функція застосовує один будь-який патч (IPS, BPS, ASM)
+// Р¦СЏ С„СѓРЅРєС†С–СЏ Р·Р°СЃС‚РѕСЃРѕРІСѓС” РѕРґРёРЅ Р±СѓРґСЊ-СЏРєРёР№ РїР°С‚С‡ (IPS, BPS, ASM)
 inline byte_vector ApplySinglePatch(const byte_vector& source_rom, String^ patchPath, bool ignoreChecksums, String^ applicationPath) {
     String^ extension = Path::GetExtension(patchPath)->ToLower();
     std::string nativePatchPath = msclr::interop::marshal_as<std::string>(patchPath);
 
     if (extension == ".ips" || extension == ".bps") {
-        // Ця частина залишається без змін...
+        // Р¦СЏ С‡Р°СЃС‚РёРЅР° Р·Р°Р»РёС€Р°С”С‚СЊСЃСЏ Р±РµР· Р·РјС–РЅ...
         byte_vector patch_data = read_file_native(nativePatchPath);
         byte_vector target_data;
         if (extension == ".ips") {
@@ -90,15 +90,15 @@ inline byte_vector ApplySinglePatch(const byte_vector& source_rom, String^ patch
         return target_data;
     }
     else if (extension == ".asm") {
-        // Для .asm ми працюємо з тимчасовими файлами
+        // Р”Р»СЏ .asm РјРё РїСЂР°С†СЋС”РјРѕ Р· С‚РёРјС‡Р°СЃРѕРІРёРјРё С„Р°Р№Р»Р°РјРё
         String^ tempRomPath = Path::GetTempFileName();
-        // ВИКОРИСТОВУЄМО ПЕРЕДАНИЙ ШЛЯХ
+        // Р’РРљРћР РРЎРўРћР’РЈР„РњРћ РџР•Р Р•Р”РђРќРР™ РЁР›РЇРҐ
         String^ asarPath = Path::Combine(applicationPath, "asar.exe");
 
         if (!File::Exists(asarPath)) {
-            throw gcnew System::IO::FileNotFoundException("Не знайдено файл asar.exe в папці: " + applicationPath);
+            throw gcnew System::IO::FileNotFoundException("РќРµ Р·РЅР°Р№РґРµРЅРѕ С„Р°Р№Р» asar.exe РІ РїР°РїС†С–: " + applicationPath);
         }
-        // ... інша частина логіки для asar залишається без змін ...
+        // ... С–РЅС€Р° С‡Р°СЃС‚РёРЅР° Р»РѕРіС–РєРё РґР»СЏ asar Р·Р°Р»РёС€Р°С”С‚СЊСЃСЏ Р±РµР· Р·РјС–РЅ ...
         try {
             std::string nativeTempRomPath = msclr::interop::marshal_as<std::string>(tempRomPath);
             write_file_native(nativeTempRomPath, source_rom);
@@ -111,7 +111,7 @@ inline byte_vector ApplySinglePatch(const byte_vector& source_rom, String^ patch
 
             if (!CreateProcessW(NULL, lpCommandLine, NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi)) {
                 System::Runtime::InteropServices::Marshal::FreeHGlobal((IntPtr)lpCommandLine);
-                throw gcnew Exception("Не вдалося запустити процес asar.exe. Помилка WinAPI: " + System::Runtime::InteropServices::Marshal::GetLastWin32Error());
+                throw gcnew Exception("РќРµ РІРґР°Р»РѕСЃСЏ Р·Р°РїСѓСЃС‚РёС‚Рё РїСЂРѕС†РµСЃ asar.exe. РџРѕРјРёР»РєР° WinAPI: " + System::Runtime::InteropServices::Marshal::GetLastWin32Error());
             }
 
             System::Runtime::InteropServices::Marshal::FreeHGlobal((IntPtr)lpCommandLine);
@@ -123,7 +123,7 @@ inline byte_vector ApplySinglePatch(const byte_vector& source_rom, String^ patch
             CloseHandle(pi.hThread);
 
             if (exitCode != 0) {
-                throw gcnew Exception("Asar повідомив про помилку (код " + exitCode + ").");
+                throw gcnew Exception("Asar РїРѕРІС–РґРѕРјРёРІ РїСЂРѕ РїРѕРјРёР»РєСѓ (РєРѕРґ " + exitCode + ").");
             }
 
             return read_file_native(nativeTempRomPath);
@@ -135,6 +135,6 @@ inline byte_vector ApplySinglePatch(const byte_vector& source_rom, String^ patch
         }
     }
     else {
-        throw gcnew NotSupportedException("Непідтримуваний формат патча: " + extension);
+        throw gcnew NotSupportedException("РќРµРїС–РґС‚СЂРёРјСѓРІР°РЅРёР№ С„РѕСЂРјР°С‚ РїР°С‚С‡Р°: " + extension);
     }
 }

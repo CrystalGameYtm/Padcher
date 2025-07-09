@@ -5,10 +5,10 @@
 #include <string>
 #include <cstdint>
 
-// Тип для бінарних даних
+// РўРёРї РґР»СЏ Р±С–РЅР°СЂРЅРёС… РґР°РЅРёС…
 using byte_vector = std::vector<uint8_t>;
 
-// Структура, що описує одну дію в BPS-патчі
+// РЎС‚СЂСѓРєС‚СѓСЂР°, С‰Рѕ РѕРїРёСЃСѓС” РѕРґРЅСѓ РґС–СЋ РІ BPS-РїР°С‚С‡С–
 struct BpsAction {
     enum Type : uint8_t {
         SourceRead,
@@ -20,13 +20,13 @@ struct BpsAction {
     Type type;
     uint64_t length = 0;
 
-    // Дані, специфічні для певних типів дій
-    byte_vector bytes_to_write; // для TargetRead
+    // Р”Р°РЅС–, СЃРїРµС†РёС„С–С‡РЅС– РґР»СЏ РїРµРІРЅРёС… С‚РёРїС–РІ РґС–Р№
+    byte_vector bytes_to_write; // РґР»СЏ TargetRead
     using byte_vector = std::vector<uint8_t>;
-    int64_t relative_offset = 0;  // для SourceCopy, TargetCopy
+    int64_t relative_offset = 0;  // РґР»СЏ SourceCopy, TargetCopy
 };
 
-// Структура, що представляє розпарсений BPS-патч
+// РЎС‚СЂСѓРєС‚СѓСЂР°, С‰Рѕ РїСЂРµРґСЃС‚Р°РІР»СЏС” СЂРѕР·РїР°СЂСЃРµРЅРёР№ BPS-РїР°С‚С‡
 struct BpsPatch {
     uint64_t source_size = 0;
     uint64_t target_size = 0;
@@ -39,12 +39,12 @@ struct BpsPatch {
 };
 
 /**
- * @brief Застосовує BPS-патч до вихідного файлу.
- * @param source_rom Дані оригінального ROM-файлу.
- * @param patch_data Дані BPS-патчу.
- * @param validate_checksums Якщо true, перевірятимуться контрольні суми.
- * @return Дані пропатченого ROM-файлу.
- * @throw std::runtime_error у випадку помилки (неправильний формат, невідповідність CRC).
+ * @brief Р—Р°СЃС‚РѕСЃРѕРІСѓС” BPS-РїР°С‚С‡ РґРѕ РІРёС…С–РґРЅРѕРіРѕ С„Р°Р№Р»Сѓ.
+ * @param source_rom Р”Р°РЅС– РѕСЂРёРіС–РЅР°Р»СЊРЅРѕРіРѕ ROM-С„Р°Р№Р»Сѓ.
+ * @param patch_data Р”Р°РЅС– BPS-РїР°С‚С‡Сѓ.
+ * @param validate_checksums РЇРєС‰Рѕ true, РїРµСЂРµРІС–СЂСЏС‚РёРјСѓС‚СЊСЃСЏ РєРѕРЅС‚СЂРѕР»СЊРЅС– СЃСѓРјРё.
+ * @return Р”Р°РЅС– РїСЂРѕРїР°С‚С‡РµРЅРѕРіРѕ ROM-С„Р°Р№Р»Сѓ.
+ * @throw std::runtime_error Сѓ РІРёРїР°РґРєСѓ РїРѕРјРёР»РєРё (РЅРµРїСЂР°РІРёР»СЊРЅРёР№ С„РѕСЂРјР°С‚, РЅРµРІС–РґРїРѕРІС–РґРЅС–СЃС‚СЊ CRC).
  */
 byte_vector apply_bps_patch(const byte_vector& source_rom, const byte_vector& patch_data, bool validate_checksums = true);
 byte_vector create_bps_patch(const byte_vector& original_rom, const byte_vector& modified_rom, bool use_delta_mode, const std::string& metadata = "");
