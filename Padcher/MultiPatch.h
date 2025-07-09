@@ -119,7 +119,7 @@ namespace Padcher {
 			   this->ignoreChecksumsCheckbox->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 9.75F));
 			   this->ignoreChecksumsCheckbox->Location = System::Drawing::Point(12, 354);
 			   this->ignoreChecksumsCheckbox->Name = L"ignoreChecksumsCheckbox";
-			   this->ignoreChecksumsCheckbox->Size = System::Drawing::Size(142, 20);
+			   this->ignoreChecksumsCheckbox->Size = System::Drawing::Size(137, 20);
 			   this->ignoreChecksumsCheckbox->TabIndex = 3;
 			   this->ignoreChecksumsCheckbox->Text = L"Ignore Checksums";
 			   this->ignoreChecksumsCheckbox->UseVisualStyleBackColor = true;
@@ -128,7 +128,7 @@ namespace Padcher {
 			   // 
 			   this->buttonSelectOutput->Anchor = static_cast<System::Windows::Forms::AnchorStyles>((System::Windows::Forms::AnchorStyles::Bottom | System::Windows::Forms::AnchorStyles::Right));
 			   this->buttonSelectOutput->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 9.75F, System::Drawing::FontStyle::Bold));
-			   this->buttonSelectOutput->Location = System::Drawing::Point(477, 322);
+			   this->buttonSelectOutput->Location = System::Drawing::Point(630, 324);
 			   this->buttonSelectOutput->Name = L"buttonSelectOutput";
 			   this->buttonSelectOutput->Size = System::Drawing::Size(42, 26);
 			   this->buttonSelectOutput->TabIndex = 1;
@@ -141,9 +141,9 @@ namespace Padcher {
 			   this->outputPathTextBox->Anchor = static_cast<System::Windows::Forms::AnchorStyles>(((System::Windows::Forms::AnchorStyles::Bottom | System::Windows::Forms::AnchorStyles::Left)
 				   | System::Windows::Forms::AnchorStyles::Right));
 			   this->outputPathTextBox->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12));
-			   this->outputPathTextBox->Location = System::Drawing::Point(12, 322);
+			   this->outputPathTextBox->Location = System::Drawing::Point(16, 322);
 			   this->outputPathTextBox->Name = L"outputPathTextBox";
-			   this->outputPathTextBox->Size = System::Drawing::Size(462, 26);
+			   this->outputPathTextBox->Size = System::Drawing::Size(612, 26);
 			   this->outputPathTextBox->TabIndex = 0;
 			   // 
 			   // groupBox1
@@ -228,7 +228,7 @@ namespace Padcher {
 			   this->label3->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12));
 			   this->label3->Location = System::Drawing::Point(12, 299);
 			   this->label3->Name = L"label3";
-			   this->label3->Size = System::Drawing::Size(126, 20);
+			   this->label3->Size = System::Drawing::Size(132, 20);
 			   this->label3->TabIndex = 13;
 			   this->label3->Text = L"Output File (New)";
 			   // 
@@ -248,7 +248,7 @@ namespace Padcher {
 			   this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
 			   this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
 			   this->BackColor = System::Drawing::Color::Gainsboro;
-			   this->ClientSize = System::Drawing::Size(684, 481);
+			   this->ClientSize = System::Drawing::Size(684, 485);
 			   this->Controls->Add(this->buttonClearList);
 			   this->Controls->Add(this->label3);
 			   this->Controls->Add(this->ignoreChecksumsCheckbox);

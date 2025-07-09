@@ -1,6 +1,3 @@
-// flips.hpp - Final Hybrid Version, adapted from RomPatcher.js logic by Marc Robledo
-// This version aims to replicate the behavior of the known working web patcher.
-
 #ifndef FLIPS_HPP
 #define FLIPS_HPP
 
@@ -12,8 +9,8 @@
 
 namespace flips {
 
-    // --- BPS VLV Reading Logic from RomPatcher.js ---
-    inline uint64_t read_vlv_rompatcherjs(const unsigned char*& data, const unsigned char* end) {
+    // BPS VLV Reading Logic
+    inline uint64_t read_vlv(const unsigned char*& data, const unsigned char* end) {
         uint64_t result = 0, shift = 1;
         while (data < end) {
             uint8_t x = *data++;
@@ -27,7 +24,6 @@ namespace flips {
         return result;
     }
 
-    // --- BPS Patching Logic (Adapted from RomPatcher.js) ---
     inline std::string apply_bps(
         const std::vector<unsigned char>& patch,
         const std::vector<unsigned char>& source,
@@ -41,9 +37,9 @@ namespace flips {
         }
         patch_ptr += 4;
 
-        uint64_t source_size = read_vlv_rompatcherjs(patch_ptr, patch_end);
-        uint64_t target_size = read_vlv_rompatcherjs(patch_ptr, patch_end);
-        uint64_t metadata_size = read_vlv_rompatcherjs(patch_ptr, patch_end);
+        uint64_t source_size = read_vlv(patch_ptr, patch_end);
+        uint64_t target_size = read_vlv(patch_ptr, patch_end);
+        uint64_t metadata_size = read_vlv(patch_ptr, patch_end);
 
         if (patch_ptr + metadata_size > patch_end - 12) {
             return "Patch metadata is corrupt.";
@@ -56,7 +52,7 @@ namespace flips {
         int64_t target_relative_offset = 0;
 
         while (patch_ptr < patch_end - 12) {
-            uint64_t data = read_vlv_rompatcherjs(patch_ptr, patch_end);
+            uint64_t data = read_vlv(patch_ptr, patch_end);
             uint64_t command = data & 3;
             uint64_t length = (data >> 2) + 1;
 
@@ -80,7 +76,7 @@ namespace flips {
                 break;
             case 2: // SourceCopy
             {
-                uint64_t offset_data = read_vlv_rompatcherjs(patch_ptr, patch_end);
+                uint64_t offset_data = read_vlv(patch_ptr, patch_end);
                 source_relative_offset += (offset_data & 1 ? -1 : 1) * (offset_data >> 1);
                 for (uint64_t i = 0; i < length; i++) {
                     if (target.size() > 0 && source.size() > 0)
@@ -92,7 +88,7 @@ namespace flips {
             break;
             case 3: // TargetCopy
             {
-                uint64_t offset_data = read_vlv_rompatcherjs(patch_ptr, patch_end);
+                uint64_t offset_data = read_vlv(patch_ptr, patch_end);
                 target_relative_offset += (offset_data & 1 ? -1 : 1) * (offset_data >> 1);
                 for (uint64_t i = 0; i < length; i++) {
                     if (target.size() > 0)
@@ -104,10 +100,10 @@ namespace flips {
             break;
             }
         }
-        return ""; // Success
+        return ""; 
     }
 
-    // --- IPS Patching Logic (без змін) ---
+    // IPS Patching Logic
     inline std::string apply_ips(
         const std::vector<unsigned char>& patch,
         const std::vector<unsigned char>& source,
@@ -142,7 +138,7 @@ namespace flips {
         return "";
     }
 
-    // --- CRC32 Calculation (без змін) ---
+    // CRC32 Calculation 
     inline uint32_t crc32_table[256] = { 0 };
     inline void build_crc32_table() {
         if (crc32_table[1]) return;

@@ -2,7 +2,6 @@
 #include "MultiPatch.h" 
 #include "bps_patcher.h"
 #include "flips.hpp"
-#include "asm_patcher.h" 
 #include "PatcherLogic.h" // Include our shared logic
 #include <msclr/marshal_cppstd.h>
 #include <fstream> 
@@ -316,7 +315,7 @@ namespace Padcher {
 			   this->FormBorderStyle = System::Windows::Forms::FormBorderStyle::FixedSingle;
 			   this->MaximizeBox = false;
 			   this->Name = L"MyForm";
-			   this->Text = L"Patcher";
+			   this->Text = L"Padcher";
 			   this->Load += gcnew System::EventHandler(this, &MyForm::MyForm_Load);
 			   this->groupBox1->ResumeLayout(false);
 			   this->groupBox1->PerformLayout();
@@ -331,7 +330,7 @@ namespace Padcher {
 		if (!File::Exists(asarPath)) {
 			MessageBox::Show(
 				"File \"asar.exe\" was not found in the application directory.\n\n"
-				"The .asm patching feature will be unavailable until you place asar.exe next to this patcher.",
+				"The .asm patching feature will be unavailable until you place asar.exe next to Padcher.",
 				"Warning: Missing Component",
 				MessageBoxButtons::OK,
 				MessageBoxIcon::Warning

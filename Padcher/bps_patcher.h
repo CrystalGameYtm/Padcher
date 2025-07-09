@@ -49,4 +49,4 @@ struct BpsPatch {
 byte_vector apply_bps_patch(const byte_vector& source_rom, const byte_vector& patch_data, bool validate_checksums = true);
 byte_vector create_bps_patch(const byte_vector& original_rom, const byte_vector& modified_rom, bool use_delta_mode, const std::string& metadata = "");
 
-#endif // BPS_PATCHER_H#pragma once
+#endif 
