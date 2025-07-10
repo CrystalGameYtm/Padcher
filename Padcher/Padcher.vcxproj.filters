@@ -41,5 +41,8 @@
     <ClInclude Include="bps_patcher.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PadcherPack.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
