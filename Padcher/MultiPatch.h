@@ -489,22 +489,21 @@ namespace Padcher {
 		}
 	}
 
-		   /// <summary>
-		   /// Завантажує проект з файлу .padproj
-		   /// </summary>
 	private: System::Void buttonLoadProject_Click(System::Object^ sender, System::EventArgs^ e) {
 		OpenFileDialog^ ofd = gcnew OpenFileDialog();
 		ofd->Filter = "Padcher Pack|*.padpack";
 		ofd->Title = "Open Padcher Pack";
-		if (ofd->ShowDialog() != System::Windows::Forms::DialogResult::OK) return;
+		if (ofd->ShowDialog() != System::Windows::Forms::DialogResult::OK) {
+			return; // Користувач скасував
+		}
 
 		try {
+			// 1. Створення нового об'єкту проєкту та завантаження XML
 			currentProject = gcnew PadcherPack();
-
 			System::Xml::XmlDocument^ doc = gcnew System::Xml::XmlDocument();
 			doc->Load(ofd->FileName);
 
-			// 1. Завантажуємо інформацію про базовий ROM
+			// 2. Завантаження інформації про базовий ROM
 			System::Xml::XmlNode^ romNode = doc->SelectSingleNode("/PadcherPack/BaseRom");
 			if (romNode == nullptr) throw gcnew Exception("BaseRom node not found in project file.");
 
@@ -514,26 +513,37 @@ namespace Padcher {
 			InitialRomPath = currentProject->FullBaseRomPath;
 
 			if (!File::Exists(InitialRomPath)) {
-				MessageBox::Show("Base ROM '" + currentProject->BaseRomFileName + "' not found in the project folder.", "Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
+				MessageBox::Show("Base ROM '" + currentProject->BaseRomFileName + "' not found in the project folder. Please make sure it's in the same directory as the .padpack file.", "Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 				return;
 			}
+
+			// 3. Завантаження компонентів (патчів)
 			dataGridView1->Rows->Clear();
 			System::Xml::XmlNodeList^ componentNodes = doc->SelectNodes("/PadcherPack/Components/Component");
 			for each (System::Xml::XmlNode ^ node in componentNodes) {
 				PatchComponent^ component = gcnew PatchComponent();
 				component->FileName = node->Attributes["FileName"]->Value;
-				component->Base64Data = node->InnerText;
-				currentProject->Components->Add(component);
+				component->Type = node->Attributes["Type"]->Value;
 
-				// Додаємо в таблицю для відображення
 				int rowId = dataGridView1->Rows->Add();
 				DataGridViewRow^ row = dataGridView1->Rows[rowId];
 				row->Cells["Num"]->Value = rowId + 1;
-				row->Cells["PatchPath"]->Value = component->FileName;
 				row->Cells["Status"]->Value = "Loaded";
+
+				// --- Розрізнення типів ---
+				if (component->Type == "embedded") {
+					component->Base64Data = node->InnerText;
+					row->Cells["PatchPath"]->Value = component->FileName + " (embedded)";
+				}
+				else if (component->Type == "external") {
+					component->RelativePath = node->Attributes["RelativePath"]->Value;
+					row->Cells["PatchPath"]->Value = Path::Combine(projectDir, component->RelativePath);
+				}
+				currentProject->Components->Add(component);
 			}
 
 			projectPathTextBox->Text = ofd->FileName;
+			MessageBox::Show("Project loaded successfully.", "Info", MessageBoxButtons::OK, MessageBoxIcon::Information);
 		}
 		catch (Exception^ ex) {
 			MessageBox::Show("Failed to load project:\n" + ex->Message, "Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
@@ -553,61 +563,74 @@ namespace Padcher {
 			return;
 		}
 
+		// 2. Діалог збереження файлу
 		SaveFileDialog^ sfd = gcnew SaveFileDialog();
-		sfd->Filter = "Padcher Pack|*.padpack"; // Використовуємо нове розширення
+		sfd->Filter = "Padcher Pack|*.padpack";
 		sfd->Title = "Save Padcher Pack";
-		if (sfd->ShowDialog() != System::Windows::Forms::DialogResult::OK) return;
+		sfd->FileName = "MyModPack.padpack";
+		if (sfd->ShowDialog() != System::Windows::Forms::DialogResult::OK) {
+			return; // Користувач скасував
+		}
 
 		try {
-			// Створення XML-документа
+			// 3. Створення XML-структури
 			System::Xml::XmlDocument^ doc = gcnew System::Xml::XmlDocument();
 			System::Xml::XmlElement^ root = doc->CreateElement("PadcherPack");
 			doc->AppendChild(root);
 
-			// 1. Зберігаємо інформацію про базовий ROM
+			// 4. Збереження інформації про базовий ROM і копіювання його
 			String^ baseRomFileName = Path::GetFileName(InitialRomPath);
 			System::Xml::XmlElement^ romElement = doc->CreateElement("BaseRom");
 			romElement->SetAttribute("FileName", baseRomFileName);
 			root->AppendChild(romElement);
 
-			// Копіюємо базовий ROM у папку з проєктом
 			String^ projectDir = Path::GetDirectoryName(sfd->FileName);
 			String^ newRomPath = Path::Combine(projectDir, baseRomFileName);
-			if (Path::GetFullPath(InitialRomPath) != Path::GetFullPath(newRomPath)) {
-				File::Copy(InitialRomPath, newRomPath, true);
+			if (Path::GetFullPath(InitialRomPath)->ToLower() != Path::GetFullPath(newRomPath)->ToLower()) {
+				File::Copy(InitialRomPath, newRomPath, true); // Копіюємо ROM в папку проєкту
 			}
 
-			// 2. Зберігаємо кожен патч
+			// 5. Підготовка до збереження патчів
 			System::Xml::XmlElement^ componentsElement = doc->CreateElement("Components");
 			root->AppendChild(componentsElement);
 
+			String^ asmDirName = Path::GetFileNameWithoutExtension(sfd->FileName) + "_asm_files";
+			String^ asmFullPath = Path::Combine(projectDir, asmDirName);
+
+			// 6. Ітерація по патчах з таблиці та їх збереження
 			for each (DataGridViewRow ^ row in dataGridView1->Rows) {
-				String^ patchFullPath = row->Cells["PatchPath"]->Value->ToString();
+				String^ patchOriginalPath = row->Cells["PatchPath"]->Value->ToString();
 
-				if (File::Exists(patchFullPath)) {
-					String^ patchFileName = Path::GetFileName(patchFullPath);
-					array<Byte>^ patchBytes = File::ReadAllBytes(patchFullPath);
-					String^ base64Data = Convert::ToBase64String(patchBytes);
+				// Якщо у рядку вже не шлях, а "embedded", значить, він вже з проєкту, пропускаємо
+				if (!File::Exists(patchOriginalPath)) continue;
 
-					System::Xml::XmlElement^ componentElement = doc->CreateElement("Component");
-					componentElement->SetAttribute("FileName", patchFileName);
-					componentElement->InnerText = base64Data; // Дані зберігаємо всередині тегу
-					componentsElement->AppendChild(componentElement);
-				}
-				else if (currentProject != nullptr) { // Якщо патч вже завантажено з іншого проєкту
-					for each (auto existingComp in currentProject->Components) {
-						if (existingComp->FileName == patchFullPath) {
-							System::Xml::XmlElement^ componentElement = doc->CreateElement("Component");
-							componentElement->SetAttribute("FileName", existingComp->FileName);
-							componentElement->InnerText = existingComp->Base64Data;
-							componentsElement->AppendChild(componentElement);
-							break;
-						}
+				String^ patchFileName = Path::GetFileName(patchOriginalPath);
+				System::Xml::XmlElement^ componentElement = doc->CreateElement("Component");
+				componentElement->SetAttribute("FileName", patchFileName);
+
+				// --- Розрізнення типів ---
+				if (patchFileName->EndsWith(".asm", StringComparison::OrdinalIgnoreCase)) {
+					// Зовнішній патч (.asm)
+					componentElement->SetAttribute("Type", "external");
+
+					if (!Directory::Exists(asmFullPath)) {
+						Directory::CreateDirectory(asmFullPath);
 					}
+					String^ newAsmPath = Path::Combine(asmFullPath, patchFileName);
+					File::Copy(patchOriginalPath, newAsmPath, true);
+
+					componentElement->SetAttribute("RelativePath", Path::Combine(asmDirName, patchFileName));
 				}
+				else {
+					// Вбудований патч (.bps, .ips)
+					componentElement->SetAttribute("Type", "embedded");
+					array<Byte>^ patchBytes = File::ReadAllBytes(patchOriginalPath);
+					componentElement->InnerText = Convert::ToBase64String(patchBytes);
+				}
+				componentsElement->AppendChild(componentElement);
 			}
 
-			// 3. Зберігаємо XML-файл на диск
+			// 7. Збереження XML-файлу
 			doc->Save(sfd->FileName);
 
 			projectPathTextBox->Text = sfd->FileName;
@@ -616,6 +639,7 @@ namespace Padcher {
 		catch (Exception^ ex) {
 			MessageBox::Show("Failed to save project:\n" + ex->Message, "Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 		}
+		
 	}
 
 		   /// <summary>
@@ -631,21 +655,25 @@ namespace Padcher {
 			return;
 		}
 
+		// 2. Діалог збереження фінального BPS патча
 		SaveFileDialog^ sfd = gcnew SaveFileDialog();
 		sfd->Filter = "BPS Patch|*.bps";
 		sfd->Title = "Export Final BPS Patch";
 		sfd->FileName = Path::GetFileNameWithoutExtension(currentProject->BaseRomFileName) + "_final_patch.bps";
 		if (sfd->ShowDialog() != System::Windows::Forms::DialogResult::OK) {
-			return;
+			return; // Користувач скасував
 		}
 
 		this->Enabled = false;
 		this->Update();
 
 		try {
+			// 3. Завантаження оригінального ROM і створення копії для роботи
 			byte_vector originalRomData = read_file_native(marshal_as<std::string>(currentProject->FullBaseRomPath));
 			byte_vector currentRomData = originalRomData;
+			String^ projectDir = Path::GetDirectoryName(projectPathTextBox->Text);
 
+			// 4. Послідовне застосування всіх патчів з проєкту
 			for (int i = 0; i < currentProject->Components->Count; ++i) {
 				PatchComponent^ component = currentProject->Components[i];
 				DataGridViewRow^ row = dataGridView1->Rows[i];
@@ -653,34 +681,40 @@ namespace Padcher {
 				row->Cells["Status"]->Value = "Applying...";
 				this->Update();
 
-				array<Byte>^ patchBytes = Convert::FromBase64String(component->Base64Data);
-				currentRomData = ApplySinglePatchFromData(currentRomData, patchBytes, component->FileName, ignoreChecksumsCheckbox->Checked);
+				// --- Розрізнення типів ---
+				if (component->Type == "embedded") {
+					array<Byte>^ patchBytes = Convert::FromBase64String(component->Base64Data);
+					currentRomData = ApplySinglePatchFromData(currentRomData, patchBytes, component->FileName, ignoreChecksumsCheckbox->Checked);
+				}
+				else if (component->Type == "external") {
+					String^ patchFullPath = Path::Combine(projectDir, component->RelativePath);
+					currentRomData = ApplySinglePatch(currentRomData, patchFullPath, ignoreChecksumsCheckbox->Checked, Application::StartupPath);
+				}
 
 				row->Cells["Status"]->Value = "Done";
 			}
 
+			// 5. Створення фінального BPS патча на основі різниці
 			String^ metadata = "Created with Padcher";
 			byte_vector finalBpsData = create_bps_patch(originalRomData, currentRomData, true, marshal_as<std::string>(metadata));
+
+			// 6. Збереження фінального патча на диск
 			write_file_native(marshal_as<std::string>(sfd->FileName), finalBpsData);
 
 			MessageBox::Show("Final BPS patch exported successfully!", "Success", MessageBoxButtons::OK, MessageBoxIcon::Information);
 		}
 		catch (const std::exception& ex) {
 			MarkErrorInGrid();
-			MessageBox::Show("A C++ error occurred:\n" + marshal_as<String^>(ex.what()), "Critical Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
+			MessageBox::Show("A C++ error occurred during patching:\n" + marshal_as<String^>(ex.what()), "Critical Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 		}
 		catch (Exception^ ex) {
 			MarkErrorInGrid();
-			MessageBox::Show("A .NET error occurred:\n" + ex->Message, "Critical Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
+			MessageBox::Show("A .NET error occurred during patching:\n" + ex->Message, "Critical Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 		}
 		finally {
-			this->Enabled = true;
+			this->Enabled = true; // Повертаємо доступ до UI
 		}
 	}
-
-		   /// <summary>
-		   /// Обробник для невикористовуваної кнопки (заглушка)
-		   /// </summary>
 	private: System::Void button2_Click(System::Object^ sender, System::EventArgs^ e) {
 		MessageBox::Show("This feature (Delete Patch) is not yet implemented.", "Info", MessageBoxButtons::OK, MessageBoxIcon::Information);
 	}
