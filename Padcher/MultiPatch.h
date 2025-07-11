@@ -622,7 +622,6 @@ namespace Padcher {
 					componentElement->SetAttribute("RelativePath", Path::Combine(asmDirName, patchFileName));
 				}
 				else {
-					// Вбудований патч (.bps, .ips)
 					componentElement->SetAttribute("Type", "embedded");
 					array<Byte>^ patchBytes = File::ReadAllBytes(patchOriginalPath);
 					componentElement->InnerText = Convert::ToBase64String(patchBytes);
@@ -642,66 +641,95 @@ namespace Padcher {
 		
 	}
 
-		   /// <summary>
-		   /// "Компілює" завантажений проєкт в один фінальний .BPS патч.
-		   /// </summary>
 	private: System::Void buttonApplyPatches_Click(System::Object^ sender, System::EventArgs^ e) {
-		if (currentProject == nullptr) {
-			MessageBox::Show("Please load a project first before exporting.", "Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
+		if (String::IsNullOrEmpty(InitialRomPath) || !File::Exists(InitialRomPath)) {
+			MessageBox::Show("Initial ROM file not found. Please close this window and select it again.", "Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 			return;
 		}
-		if (String::IsNullOrEmpty(currentProject->FullBaseRomPath) || !File::Exists(currentProject->FullBaseRomPath)) {
-			MessageBox::Show("Base ROM not found. Please check the project file and folder.", "Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
+		if (dataGridView1->Rows->Count == 0) {
+			MessageBox::Show("The patch list is empty. Please add at least one patch.", "Warning", MessageBoxButtons::OK, MessageBoxIcon::Warning);
 			return;
 		}
 
-		// 2. Діалог збереження фінального BPS патча
-		SaveFileDialog^ sfd = gcnew SaveFileDialog();
-		sfd->Filter = "BPS Patch|*.bps";
-		sfd->Title = "Export Final BPS Patch";
-		sfd->FileName = Path::GetFileNameWithoutExtension(currentProject->BaseRomFileName) + "_final_patch.bps";
-		if (sfd->ShowDialog() != System::Windows::Forms::DialogResult::OK) {
-			return; // Користувач скасував
+		// 2. Визначаємо режим роботи: Проєктний чи Прямий Мультипатчинг
+		bool isProjectMode = (currentProject != nullptr);
+
+		String^ outputFilePath;
+		if (isProjectMode) {
+			// РЕЖИМ ПРОЄКТУ: Експортуємо фінальний BPS
+			SaveFileDialog^ sfd = gcnew SaveFileDialog();
+			sfd->Filter = "BPS Patch|*.bps";
+			sfd->Title = "Export Final BPS Patch";
+			sfd->FileName = Path::GetFileNameWithoutExtension(currentProject->BaseRomFileName) + "_final_patch.bps";
+			if (sfd->ShowDialog() != System::Windows::Forms::DialogResult::OK) return;
+			outputFilePath = sfd->FileName;
+		}
+		else {
+			// РЕЖИМ МУЛЬТИПАТЧИНГУ: Зберігаємо фінальний ROM
+			if (String::IsNullOrWhiteSpace(outputPathTextBox->Text)) {
+				MessageBox::Show("Please specify an output file path for the patched ROM.", "Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
+				return;
+			}
+			outputFilePath = outputPathTextBox->Text;
+			if (Path::GetFullPath(outputFilePath)->ToLower() == Path::GetFullPath(InitialRomPath)->ToLower()) {
+				MessageBox::Show("The output file cannot be the same as the source ROM.", "Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
+				return;
+			}
 		}
 
+		// Блокуємо UI на час роботи
 		this->Enabled = false;
 		this->Update();
 
 		try {
-			// 3. Завантаження оригінального ROM і створення копії для роботи
-			byte_vector originalRomData = read_file_native(marshal_as<std::string>(currentProject->FullBaseRomPath));
+			// 3. Завантажуємо оригінальний ROM
+			byte_vector originalRomData = read_file_native(marshal_as<std::string>(InitialRomPath));
 			byte_vector currentRomData = originalRomData;
-			String^ projectDir = Path::GetDirectoryName(projectPathTextBox->Text);
 
-			// 4. Послідовне застосування всіх патчів з проєкту
-			for (int i = 0; i < currentProject->Components->Count; ++i) {
-				PatchComponent^ component = currentProject->Components[i];
+			// 4. Послідовно застосовуємо патчі
+			for (int i = 0; i < dataGridView1->Rows->Count; ++i) {
 				DataGridViewRow^ row = dataGridView1->Rows[i];
 
 				row->Cells["Status"]->Value = "Applying...";
+				row->Cells["Status"]->Style->ForeColor = Color::Blue;
 				this->Update();
 
-				// --- Розрізнення типів ---
-				if (component->Type == "embedded") {
-					array<Byte>^ patchBytes = Convert::FromBase64String(component->Base64Data);
-					currentRomData = ApplySinglePatchFromData(currentRomData, patchBytes, component->FileName, ignoreChecksumsCheckbox->Checked);
+				if (isProjectMode) {
+					// Беремо дані з проєкту
+					PatchComponent^ component = currentProject->Components[i];
+					if (component->Type == "embedded") {
+						array<Byte>^ patchBytes = Convert::FromBase64String(component->Base64Data);
+						currentRomData = ApplySinglePatchFromData(currentRomData, patchBytes, component->FileName, ignoreChecksumsCheckbox->Checked);
+					}
+					else { // external .asm
+						String^ projectDir = Path::GetDirectoryName(projectPathTextBox->Text);
+						String^ patchFullPath = Path::Combine(projectDir, component->RelativePath);
+						currentRomData = ApplySinglePatch(currentRomData, patchFullPath, ignoreChecksumsCheckbox->Checked, Application::StartupPath);
+					}
 				}
-				else if (component->Type == "external") {
-					String^ patchFullPath = Path::Combine(projectDir, component->RelativePath);
-					currentRomData = ApplySinglePatch(currentRomData, patchFullPath, ignoreChecksumsCheckbox->Checked, Application::StartupPath);
+				else {
+					// Беремо шлях з таблиці
+					String^ patchPath = row->Cells["PatchPath"]->Value->ToString();
+					currentRomData = ApplySinglePatch(currentRomData, patchPath, ignoreChecksumsCheckbox->Checked, Application::StartupPath);
 				}
-
 				row->Cells["Status"]->Value = "Done";
+				row->Cells["Status"]->Style->ForeColor = Color::Green;
 			}
 
-			// 5. Створення фінального BPS патча на основі різниці
-			String^ metadata = "Created with Padcher";
-			byte_vector finalBpsData = create_bps_patch(originalRomData, currentRomData, true, marshal_as<std::string>(metadata));
-
-			// 6. Збереження фінального патча на диск
-			write_file_native(marshal_as<std::string>(sfd->FileName), finalBpsData);
-
-			MessageBox::Show("Final BPS patch exported successfully!", "Success", MessageBoxButtons::OK, MessageBoxIcon::Information);
+			// 5. Зберігаємо результат
+			if (isProjectMode) {
+				// Створюємо та зберігаємо фінальний BPS
+				String^ metadata = "Created with Padcher";
+				byte_vector finalBpsData = create_bps_patch(originalRomData, currentRomData, true, marshal_as<std::string>(metadata));
+				write_file_native(marshal_as<std::string>(outputFilePath), finalBpsData);
+				MessageBox::Show("Final BPS patch exported successfully!", "Success", MessageBoxButtons::OK, MessageBoxIcon::Information);
+			}
+			else {
+				// Зберігаємо фінальний ROM
+				write_file_native(marshal_as<std::string>(outputFilePath), currentRomData);
+				UpdateChecksums(outputFilePath); // Оновлюємо хеші на формі
+				MessageBox::Show("All patches applied successfully!", "Success", MessageBoxButtons::OK, MessageBoxIcon::Information);
+			}
 		}
 		catch (const std::exception& ex) {
 			MarkErrorInGrid();
