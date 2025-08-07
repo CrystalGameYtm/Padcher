@@ -6,31 +6,48 @@ on:
   pull_request:
     branches: [ "master" ]
 
+env:
+  SOLUTION_NAME: Padcher.sln    
+  EXECUTABLE_NAME: Padcher.exe  
+  ARTIFACT_NAME: Padcher-Win-x64 
+
 jobs:
-  build:
+  build-and-release:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout repository
+    - name: 1. Checkout repository
       uses: actions/checkout@v4
-    - name: Setup MSBuild
+
+    - name: 2. Setup MSBuild
       uses: microsoft/setup-msbuild@v2
-    - name: Build Solution
-      run: msbuild.exe Padcher.sln /p:Configuration=Debug
-    - name: Upload Artifact
+
+    - name: 3. Build Solution in Release mode
+      run: msbuild.exe ${{ env.SOLUTION_NAME }} /p:Configuration=Release /p:Platform=x64
+
+    - name: 4. Prepare release files
+      run: |
+        mkdir release
+        cp x64/Release/${{ env.EXECUTABLE_NAME }} release/
+
+    - name: 5. Create a ZIP archive
+      run: Compress-Archive -Path release\* -DestinationPath ${{ env.ARTIFACT_NAME }}.zip
+      
+    - name: 6. Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Padcher-Executable
-        path: x64/Debug/Padcher.exe
-    - name: Create Release and Upload Asset
+        name: ${{ env.ARTIFACT_NAME }}
+        path: ${{ env.ARTIFACT_NAME }}.zip
+
+    - name: 7. Create/Update Development Release
+      if: github.event_name == 'push'
       uses: softprops/action-gh-release@v2
       with:
-        # Шлях до файлів, які потрібно завантажити.
-        # Дія автоматично видалить старий Patcher.exe і завантажить новий.
-        files: x64/Debug/Padcher.exe
+        files: ${{ env.ARTIFACT_NAME }}.zip
         
-        # Решта ваших параметрів залишаються
+        # Налаштування релізу
         tag_name: dev
-        name: "Dev Build"
-        body: "Auto Build Devoloper Build."
+        name: "Padcher Dev Build 
+        body: "This is an automated development build from the latest commit. Contains Padcher.exe and all required dependencies."
         prerelease: true
+        overwrite: true
