@@ -31,6 +31,8 @@ namespace Padcher {
 			this->AllowDrop = true;
 			this->DragEnter += gcnew System::Windows::Forms::DragEventHandler(this, &MyForm::MyForm_DragEnter);
 			this->DragDrop += gcnew System::Windows::Forms::DragEventHandler(this, &MyForm::MyForm_DragDrop);
+			LoadHistoryFromFile(this->comboBox1, "rom_history.txt");
+			LoadHistoryFromFile(this->comboBox2, "patch_history.txt");
 		}
 
 	protected:
@@ -62,8 +64,10 @@ namespace Padcher {
 	private: System::Windows::Forms::Label^ labelRomCrc32;
 	private: System::Windows::Forms::CheckBox^ checkmultipatch;
 	private: System::Windows::Forms::Button^ button2;
-	private: System::Windows::Forms::TextBox^ textBox2;
-	private: System::Windows::Forms::TextBox^ textBox1;
+	private: System::Windows::Forms::ComboBox^ comboBox1;
+	private: System::Windows::Forms::ComboBox^ comboBox2;
+
+
 
 
 	private: System::ComponentModel::Container^ components;
@@ -89,8 +93,8 @@ namespace Padcher {
 			   this->labelRomCrc32 = (gcnew System::Windows::Forms::Label());
 			   this->checkmultipatch = (gcnew System::Windows::Forms::CheckBox());
 			   this->button2 = (gcnew System::Windows::Forms::Button());
-			   this->textBox2 = (gcnew System::Windows::Forms::TextBox());
-			   this->textBox1 = (gcnew System::Windows::Forms::TextBox());
+			   this->comboBox1 = (gcnew System::Windows::Forms::ComboBox());
+			   this->comboBox2 = (gcnew System::Windows::Forms::ComboBox());
 			   this->groupBox1->SuspendLayout();
 			   this->SuspendLayout();
 			   // 
@@ -283,21 +287,23 @@ namespace Padcher {
 			   this->button2->UseVisualStyleBackColor = true;
 			   this->button2->Click += gcnew System::EventHandler(this, &MyForm::button2_Click);
 			   // 
-			   // textBox2
+			   // comboBox1
 			   // 
-			   this->textBox2->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12));
-			   this->textBox2->Location = System::Drawing::Point(12, 105);
-			   this->textBox2->Name = L"textBox2";
-			   this->textBox2->Size = System::Drawing::Size(439, 26);
-			   this->textBox2->TabIndex = 2;
+			   this->comboBox1->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12));
+			   this->comboBox1->FormattingEnabled = true;
+			   this->comboBox1->Location = System::Drawing::Point(12, 40);
+			   this->comboBox1->Name = L"comboBox1";
+			   this->comboBox1->Size = System::Drawing::Size(438, 28);
+			   this->comboBox1->TabIndex = 17;
 			   // 
-			   // textBox1
+			   // comboBox2
 			   // 
-			   this->textBox1->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12));
-			   this->textBox1->Location = System::Drawing::Point(12, 41);
-			   this->textBox1->Name = L"textBox1";
-			   this->textBox1->Size = System::Drawing::Size(439, 26);
-			   this->textBox1->TabIndex = 0;
+			   this->comboBox2->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12));
+			   this->comboBox2->FormattingEnabled = true;
+			   this->comboBox2->Location = System::Drawing::Point(12, 104);
+			   this->comboBox2->Name = L"comboBox2";
+			   this->comboBox2->Size = System::Drawing::Size(438, 28);
+			   this->comboBox2->TabIndex = 18;
 			   // 
 			   // MyForm
 			   // 
@@ -305,6 +311,8 @@ namespace Padcher {
 			   this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
 			   this->BackColor = System::Drawing::Color::Gainsboro;
 			   this->ClientSize = System::Drawing::Size(511, 424);
+			   this->Controls->Add(this->comboBox2);
+			   this->Controls->Add(this->comboBox1);
 			   this->Controls->Add(this->button2);
 			   this->Controls->Add(this->checkmultipatch);
 			   this->Controls->Add(this->groupBox1);
@@ -316,8 +324,6 @@ namespace Padcher {
 			   this->Controls->Add(this->openpatch);
 			   this->Controls->Add(this->opensave);
 			   this->Controls->Add(this->textBox3);
-			   this->Controls->Add(this->textBox2);
-			   this->Controls->Add(this->textBox1);
 			   this->Controls->Add(this->label2);
 			   this->FormBorderStyle = System::Windows::Forms::FormBorderStyle::FixedSingle;
 			   this->MaximizeBox = false;
@@ -377,7 +383,7 @@ namespace Padcher {
 		openFileDialog->Filter = "All ROM Files|*.sfc;*.smc;*.gba;*.gb;*.gbc;*.nes;*.md|All files (*.*)|*.*";
 		openFileDialog->Title = "Select a ROM File";
 		if (openFileDialog->ShowDialog() == System::Windows::Forms::DialogResult::OK) {
-			textBox1->Text = openFileDialog->FileName;
+			comboBox1->Text = openFileDialog->FileName;
 			UpdateChecksums(openFileDialog->FileName);
 		}
 	}
@@ -387,8 +393,8 @@ namespace Padcher {
 		openFileDialog->Filter = "All Supported Patches (*.ips, *.bps, *.asm)|*.ips;*.bps;*.asm|All files (*.*)|*.*";
 		openFileDialog->Title = "Select a Patch File";
 		if (openFileDialog->ShowDialog() == System::Windows::Forms::DialogResult::OK) {
-			textBox2->Text = openFileDialog->FileName;
-			String^ romPath = textBox1->Text;
+			comboBox2->Text = openFileDialog->FileName;
+			String^ romPath = comboBox1->Text;
 			if (!String::IsNullOrEmpty(romPath) && File::Exists(romPath)) {
 				String^ patchDir = Path::GetDirectoryName(openFileDialog->FileName);
 				String^ patchNameWithoutExt = Path::GetFileNameWithoutExtension(openFileDialog->FileName);
@@ -419,8 +425,8 @@ namespace Padcher {
 		groupBox1->Text = "File Information (Processing...)";
 		this->Update();
 
-		String^ romPath = textBox1->Text;
-		String^ patchPath = textBox2->Text;
+		String^ romPath = comboBox1->Text;
+		String^ patchPath = comboBox2->Text;
 		String^ outputPath = textBox3->Text;
 
 		if (String::IsNullOrWhiteSpace(romPath) || String::IsNullOrWhiteSpace(patchPath) || String::IsNullOrWhiteSpace(outputPath)) {
@@ -457,7 +463,7 @@ namespace Padcher {
 
 		// Show/hide controls for single patch mode
 		bool singlePatchControlsVisible = !isMultiPatchMode;
-		this->textBox2->Enabled = singlePatchControlsVisible;
+		this->comboBox2->Enabled = singlePatchControlsVisible;
 		this->openpatch->Enabled = singlePatchControlsVisible;
 		this->label1->Enabled = singlePatchControlsVisible;
 		this->textBox3->Enabled = singlePatchControlsVisible;
@@ -466,7 +472,7 @@ namespace Padcher {
 		this->ignoreChecksumsCheckbox->Enabled = singlePatchControlsVisible;
 	}
 	private: System::Void button2_Click(System::Object^ sender, System::EventArgs^ e) {
-		String^ romPath = this->textBox1->Text;
+		String^ romPath = this->comboBox1->Text;
 
 		if (String::IsNullOrWhiteSpace(romPath) || !File::Exists(romPath)) {
 			MessageBox::Show("Please select a valid ROM file first.", "Error", MessageBoxButtons::OK, MessageBoxIcon::Warning);
@@ -505,38 +511,42 @@ private: System::Void MyForm_DragDrop(System::Object^ sender, System::Windows::F
 		if (extension == ".sfc" || extension == ".smc" || extension == ".gba" ||
 			extension == ".gb" || extension == ".gbc" || extension == ".nes" || extension == ".md")
 		{
-			textBox1->Text = file;
+			comboBox1->Text = file;
 			UpdateChecksums(file); // Оновлюємо чексуми, як при натисканні кнопки
+			AddRomToHistory(file); // Додаємо ROM до історії
 		}
 		// Перевірка на розширення патчів
 		else if (extension == ".ips" || extension == ".bps" || extension == ".asm")
 		{
-			textBox2->Text = file;
+			comboBox2->Text = file;
 			// Автоматично генеруємо ім'я для вихідного файлу, як у вашому коді
-			String^ romPath = textBox1->Text;
+			String^ romPath = comboBox1->Text;
 			if (!String::IsNullOrEmpty(romPath) && File::Exists(romPath)) {
 				String^ patchDir = Path::GetDirectoryName(file);
 				String^ patchNameWithoutExt = Path::GetFileNameWithoutExtension(file);
 				String^ romExtension = Path::GetExtension(romPath);
+				AddPatchToHistory(file);
 				textBox3->Text = Path::Combine(patchDir, patchNameWithoutExt + romExtension);
 			}
 		}
 	}
 }
-	   private:
-		   void SaveHistoryToFile(System::Windows::Forms::ComboBox^ comboBox, String^ fileName) {
-			   try {
-				   System::Collections::Generic::List<String^>^ lines = gcnew System::Collections::Generic::List<String^>();
-				   for each (Object ^ item in comboBox->Items) {
-					   lines->Add(item->ToString());
-				   }
-				   System::IO::File::WriteAllLines(fileName, lines);
-			   }
-			   catch (Exception^ ex) {
-				   MessageBox::Show("Could not save history to " + fileName + "\n" + ex->Message, "History Error");
-			   }
-		   }
+		 private:
+			 void SaveHistoryToFile(System::Windows::Forms::ComboBox^ comboBox, String^ fileName) {
+				 // ==> ДОДАЙТЕ ЦЕЙ РЯДОК ДЛЯ ДІАГНОСТИКИ <==
+				 MessageBox::Show("Attempting to save file: " + fileName, "Diagnostics");
 
+				 try {
+					 System::Collections::Generic::List<String^>^ lines = gcnew System::Collections::Generic::List<String^>();
+					 for each (Object ^ item in comboBox->Items) {
+						 lines->Add(item->ToString());
+					 }
+					 System::IO::File::WriteAllLines(fileName, lines);
+				 }
+				 catch (Exception^ ex) {
+					 MessageBox::Show("No saving in history " + fileName + "\n" + ex->Message, "Error Saving");
+				 }
+			 }
 		   void LoadHistoryFromFile(System::Windows::Forms::ComboBox^ comboBox, String^ fileName) {
 			   try {
 				   if (System::IO::File::Exists(fileName)) {
@@ -549,5 +559,30 @@ private: System::Void MyForm_DragDrop(System::Object^ sender, System::Windows::F
 				   MessageBox::Show("Could not load history from " + fileName + "\n" + ex->Message, "History Error");
 			   }
 		   }
+		   private: void AddRomToHistory(String^ romPath) {
+			   if (String::IsNullOrWhiteSpace(romPath)) {
+				   return;
+			   }
+			   comboBox1->Items->Remove(romPath);
+			   comboBox1->Items->Insert(0, romPath);
+			   while (comboBox1->Items->Count > 15) { // Обмежимо до 15 записів
+				   comboBox1->Items->RemoveAt(comboBox1->Items->Count - 1);
+			   }
+			   // Зберігаємо оновлений список у файл
+			   SaveHistoryToFile(comboBox1, "rom_history.txt");
+		   }  
+ private: void AddPatchToHistory(String^ romPath) {
+			   if (String::IsNullOrWhiteSpace(romPath)) {
+				   return;
+			   }
+			   comboBox2->Items->Remove(romPath);
+			   comboBox2->Items->Insert(0, romPath);
+			   while (comboBox2->Items->Count > 15) { // Обмежимо до 15 записів
+				   comboBox2->Items->RemoveAt(comboBox2->Items->Count - 1);
+			   }
+			   // Зберігаємо оновлений список у файл
+			   SaveHistoryToFile(comboBox2, "patch_history.txt");
+		   }
+		
 	};
 }
