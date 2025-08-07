@@ -27,6 +27,9 @@ namespace Padcher {
 		{
 			InitializeComponent();
 			this->Load += gcnew System::EventHandler(this, &MultiPatch::MultiPatch_Load);
+			this->AllowDrop = true;
+			this->DragEnter += gcnew System::Windows::Forms::DragEventHandler(this, &MultiPatch::MultiPatch_DragEnter);
+			this->DragDrop += gcnew System::Windows::Forms::DragEventHandler(this, &MultiPatch::MultiPatch_DragDrop);
 		}
 
 	protected:
@@ -172,7 +175,7 @@ namespace Padcher {
 			   this->outputPathTextBox->ReadOnly = true;
 			   this->outputPathTextBox->Size = System::Drawing::Size(612, 26);
 			   this->outputPathTextBox->TabIndex = 0;
-			   this->outputPathTextBox->Text = L"(This field is for legacy single-rom output)";
+			   this->outputPathTextBox->Text = L"(This field is for single build rom output)";
 			   // 
 			   // groupBox1
 			   // 
@@ -746,5 +749,43 @@ namespace Padcher {
 	private: System::Void button2_Click(System::Object^ sender, System::EventArgs^ e) {
 		MessageBox::Show("This feature (Delete Patch) is not yet implemented.", "Info", MessageBoxButtons::OK, MessageBoxIcon::Information);
 	}
+		   private: System::Void MultiPatch_DragEnter(System::Object^ sender, System::Windows::Forms::DragEventArgs^ e) {
+			   if (e->Data->GetDataPresent(DataFormats::FileDrop)) {
+				   e->Effect = DragDropEffects::Copy;
+			   }
+			   else {
+				   e->Effect = DragDropEffects::None;
+			   }
+		   }
+		   private: System::Void MultiPatch_DragDrop(System::Object^ sender, System::Windows::Forms::DragEventArgs^ e) {
+			   // Отримуємо масив шляхів до перетягнутих файлів
+			   array<String^>^ files = (array<String^>^)e->Data->GetData(DataFormats::FileDrop);
+
+			   // Проходимо по кожному файлу і визначаємо, що це - ROM чи патч
+			   for each(String ^ file in files) {
+				   String^ extension = Path::GetExtension(file)->ToLower();
+
+				   // Перевірка на розширення ROM-файлів
+				   if (extension == ".sfc" || extension == ".smc" || extension == ".gba" ||
+					   extension == ".gb" || extension == ".gbc" || extension == ".nes" || extension == ".md")
+				   {
+					   projectPathTextBox->Text = file;
+					   UpdateChecksums(file); // Оновлюємо чексуми, як при натисканні кнопки
+				   }
+				   // Перевірка на розширення патчів
+				   else if (extension == ".ips" || extension == ".bps" || extension == ".asm")
+				   {
+					   dataGridView1->Text = file;
+					   // Автоматично генеруємо ім'я для вихідного файлу, як у вашому коді
+					   String^ romPath = projectPathTextBox->Text;
+					   if (!String::IsNullOrEmpty(romPath) && File::Exists(romPath)) {
+						   String^ patchDir = Path::GetDirectoryName(file);
+						   String^ patchNameWithoutExt = Path::GetFileNameWithoutExtension(file);
+						   String^ romExtension = Path::GetExtension(romPath);
+						   outputPathTextBox->Text = Path::Combine(patchDir, patchNameWithoutExt + romExtension);
+					   }
+				   }
+			   }
+		   }
 	};
 }

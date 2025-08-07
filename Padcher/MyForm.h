@@ -28,6 +28,9 @@ namespace Padcher {
 			ClearChecksumLabels();
 			// Set initial visibility for MultiPatch mode
 			checkmultipatch_CheckedChanged(nullptr, nullptr);
+			this->AllowDrop = true;
+			this->DragEnter += gcnew System::Windows::Forms::DragEventHandler(this, &MyForm::MyForm_DragEnter);
+			this->DragDrop += gcnew System::Windows::Forms::DragEventHandler(this, &MyForm::MyForm_DragDrop);
 		}
 
 	protected:
@@ -38,9 +41,9 @@ namespace Padcher {
 				delete components;
 			}
 		}
-	private: System::Windows::Forms::TextBox^ textBox1;
+
 	protected:
-	private: System::Windows::Forms::TextBox^ textBox2;
+
 	private: System::Windows::Forms::TextBox^ textBox3;
 	private: System::Windows::Forms::Button^ opensave;
 	private: System::Windows::Forms::Button^ openpatch;
@@ -59,13 +62,15 @@ namespace Padcher {
 	private: System::Windows::Forms::Label^ labelRomCrc32;
 	private: System::Windows::Forms::CheckBox^ checkmultipatch;
 	private: System::Windows::Forms::Button^ button2;
+	private: System::Windows::Forms::TextBox^ textBox2;
+	private: System::Windows::Forms::TextBox^ textBox1;
+
+
 	private: System::ComponentModel::Container^ components;
 
 #pragma region Windows Form Designer generated code
 		   void InitializeComponent(void)
 		   {
-			   this->textBox1 = (gcnew System::Windows::Forms::TextBox());
-			   this->textBox2 = (gcnew System::Windows::Forms::TextBox());
 			   this->textBox3 = (gcnew System::Windows::Forms::TextBox());
 			   this->opensave = (gcnew System::Windows::Forms::Button());
 			   this->openpatch = (gcnew System::Windows::Forms::Button());
@@ -84,24 +89,10 @@ namespace Padcher {
 			   this->labelRomCrc32 = (gcnew System::Windows::Forms::Label());
 			   this->checkmultipatch = (gcnew System::Windows::Forms::CheckBox());
 			   this->button2 = (gcnew System::Windows::Forms::Button());
+			   this->textBox2 = (gcnew System::Windows::Forms::TextBox());
+			   this->textBox1 = (gcnew System::Windows::Forms::TextBox());
 			   this->groupBox1->SuspendLayout();
 			   this->SuspendLayout();
-			   // 
-			   // textBox1
-			   // 
-			   this->textBox1->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12));
-			   this->textBox1->Location = System::Drawing::Point(12, 41);
-			   this->textBox1->Name = L"textBox1";
-			   this->textBox1->Size = System::Drawing::Size(439, 26);
-			   this->textBox1->TabIndex = 0;
-			   // 
-			   // textBox2
-			   // 
-			   this->textBox2->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12));
-			   this->textBox2->Location = System::Drawing::Point(12, 105);
-			   this->textBox2->Name = L"textBox2";
-			   this->textBox2->Size = System::Drawing::Size(439, 26);
-			   this->textBox2->TabIndex = 2;
 			   // 
 			   // textBox3
 			   // 
@@ -150,7 +141,7 @@ namespace Padcher {
 			   this->label1->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12));
 			   this->label1->Location = System::Drawing::Point(12, 82);
 			   this->label1->Name = L"label1";
-			   this->label1->Size = System::Drawing::Size(82, 20);
+			   this->label1->Size = System::Drawing::Size(79, 20);
 			   this->label1->TabIndex = 13;
 			   this->label1->Text = L"Patch File";
 			   // 
@@ -160,7 +151,7 @@ namespace Padcher {
 			   this->label2->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12));
 			   this->label2->Location = System::Drawing::Point(12, 18);
 			   this->label2->Name = L"label2";
-			   this->label2->Size = System::Drawing::Size(78, 20);
+			   this->label2->Size = System::Drawing::Size(75, 20);
 			   this->label2->TabIndex = 10;
 			   this->label2->Text = L"ROM File";
 			   // 
@@ -170,7 +161,7 @@ namespace Padcher {
 			   this->label3->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12));
 			   this->label3->Location = System::Drawing::Point(12, 146);
 			   this->label3->Name = L"label3";
-			   this->label3->Size = System::Drawing::Size(126, 20);
+			   this->label3->Size = System::Drawing::Size(132, 20);
 			   this->label3->TabIndex = 12;
 			   this->label3->Text = L"Output File (New)";
 			   // 
@@ -191,7 +182,7 @@ namespace Padcher {
 			   this->ignoreChecksumsCheckbox->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 9.75F));
 			   this->ignoreChecksumsCheckbox->Location = System::Drawing::Point(16, 210);
 			   this->ignoreChecksumsCheckbox->Name = L"ignoreChecksumsCheckbox";
-			   this->ignoreChecksumsCheckbox->Size = System::Drawing::Size(142, 20);
+			   this->ignoreChecksumsCheckbox->Size = System::Drawing::Size(137, 20);
 			   this->ignoreChecksumsCheckbox->TabIndex = 6;
 			   this->ignoreChecksumsCheckbox->Text = L"Ignore Checksums";
 			   this->ignoreChecksumsCheckbox->UseVisualStyleBackColor = true;
@@ -218,7 +209,7 @@ namespace Padcher {
 			   this->sha1Label->Font = (gcnew System::Drawing::Font(L"Consolas", 9.75F));
 			   this->sha1Label->Location = System::Drawing::Point(70, 70);
 			   this->sha1Label->Name = L"sha1Label";
-			   this->sha1Label->Size = System::Drawing::Size(49, 15);
+			   this->sha1Label->Size = System::Drawing::Size(35, 15);
 			   this->sha1Label->TabIndex = 5;
 			   this->sha1Label->Text = L"sha1";
 			   // 
@@ -228,7 +219,7 @@ namespace Padcher {
 			   this->md5Label->Font = (gcnew System::Drawing::Font(L"Consolas", 9.75F));
 			   this->md5Label->Location = System::Drawing::Point(70, 48);
 			   this->md5Label->Name = L"md5Label";
-			   this->md5Label->Size = System::Drawing::Size(35, 15);
+			   this->md5Label->Size = System::Drawing::Size(28, 15);
 			   this->md5Label->TabIndex = 4;
 			   this->md5Label->Text = L"md5";
 			   // 
@@ -238,7 +229,7 @@ namespace Padcher {
 			   this->crcLabel->Font = (gcnew System::Drawing::Font(L"Consolas", 9.75F));
 			   this->crcLabel->Location = System::Drawing::Point(70, 26);
 			   this->crcLabel->Name = L"crcLabel";
-			   this->crcLabel->Size = System::Drawing::Size(35, 15);
+			   this->crcLabel->Size = System::Drawing::Size(28, 15);
 			   this->crcLabel->TabIndex = 3;
 			   this->crcLabel->Text = L"crc";
 			   // 
@@ -291,6 +282,22 @@ namespace Padcher {
 			   this->button2->Text = L"Open MultiPatch";
 			   this->button2->UseVisualStyleBackColor = true;
 			   this->button2->Click += gcnew System::EventHandler(this, &MyForm::button2_Click);
+			   // 
+			   // textBox2
+			   // 
+			   this->textBox2->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12));
+			   this->textBox2->Location = System::Drawing::Point(12, 105);
+			   this->textBox2->Name = L"textBox2";
+			   this->textBox2->Size = System::Drawing::Size(439, 26);
+			   this->textBox2->TabIndex = 2;
+			   // 
+			   // textBox1
+			   // 
+			   this->textBox1->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12));
+			   this->textBox1->Location = System::Drawing::Point(12, 41);
+			   this->textBox1->Name = L"textBox1";
+			   this->textBox1->Size = System::Drawing::Size(439, 26);
+			   this->textBox1->TabIndex = 0;
 			   // 
 			   // MyForm
 			   // 
@@ -473,5 +480,74 @@ namespace Padcher {
 		multiPatchForm->ShowDialog();
 		this->Show();
 	}
+		   private: System::Void MyForm_DragEnter(System::Object^ sender, System::Windows::Forms::DragEventArgs^ e) {
+			   // Перевіряємо, чи перетягуються саме файли
+			   if (e->Data->GetDataPresent(DataFormats::FileDrop)) {
+				   // Якщо так, змінюємо курсор, щоб показати, що сюди можна "кинути" файл
+				   e->Effect = DragDropEffects::Copy;
+			   }
+			   else {
+				   // Інакше, забороняємо дію
+				   e->Effect = DragDropEffects::None;
+			   }
+		   }
+
+				  // Цей метод викликається, коли файл "кинули" НА вікно
+private: System::Void MyForm_DragDrop(System::Object^ sender, System::Windows::Forms::DragEventArgs^ e) {
+	// Отримуємо масив шляхів до перетягнутих файлів
+	array<String^>^ files = (array<String^>^)e->Data->GetData(DataFormats::FileDrop);
+
+	// Проходимо по кожному файлу і визначаємо, що це - ROM чи патч
+	for each(String ^ file in files) {
+		String^ extension = Path::GetExtension(file)->ToLower();
+
+		// Перевірка на розширення ROM-файлів
+		if (extension == ".sfc" || extension == ".smc" || extension == ".gba" ||
+			extension == ".gb" || extension == ".gbc" || extension == ".nes" || extension == ".md")
+		{
+			textBox1->Text = file;
+			UpdateChecksums(file); // Оновлюємо чексуми, як при натисканні кнопки
+		}
+		// Перевірка на розширення патчів
+		else if (extension == ".ips" || extension == ".bps" || extension == ".asm")
+		{
+			textBox2->Text = file;
+			// Автоматично генеруємо ім'я для вихідного файлу, як у вашому коді
+			String^ romPath = textBox1->Text;
+			if (!String::IsNullOrEmpty(romPath) && File::Exists(romPath)) {
+				String^ patchDir = Path::GetDirectoryName(file);
+				String^ patchNameWithoutExt = Path::GetFileNameWithoutExtension(file);
+				String^ romExtension = Path::GetExtension(romPath);
+				textBox3->Text = Path::Combine(patchDir, patchNameWithoutExt + romExtension);
+			}
+		}
+	}
+}
+	   private:
+		   void SaveHistoryToFile(System::Windows::Forms::ComboBox^ comboBox, String^ fileName) {
+			   try {
+				   System::Collections::Generic::List<String^>^ lines = gcnew System::Collections::Generic::List<String^>();
+				   for each (Object ^ item in comboBox->Items) {
+					   lines->Add(item->ToString());
+				   }
+				   System::IO::File::WriteAllLines(fileName, lines);
+			   }
+			   catch (Exception^ ex) {
+				   MessageBox::Show("Could not save history to " + fileName + "\n" + ex->Message, "History Error");
+			   }
+		   }
+
+		   void LoadHistoryFromFile(System::Windows::Forms::ComboBox^ comboBox, String^ fileName) {
+			   try {
+				   if (System::IO::File::Exists(fileName)) {
+					   array<String^>^ lines = System::IO::File::ReadAllLines(fileName);
+					   comboBox->Items->Clear();
+					   comboBox->Items->AddRange(lines);
+				   }
+			   }
+			   catch (Exception^ ex) {
+				   MessageBox::Show("Could not load history from " + fileName + "\n" + ex->Message, "History Error");
+			   }
+		   }
 	};
 }

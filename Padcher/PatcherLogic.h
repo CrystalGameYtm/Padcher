@@ -13,8 +13,6 @@ using namespace System::IO;
 using namespace System::Security::Cryptography;
 using namespace System::Text;
 
-// --- ДОПОМІЖНІ ТИПИ ТА ФУНКЦІЇ, ЩО ПРАЦЮЮТЬ З НАТИВНИМ C++ ---
-
 // Визначаємо byte_vector, щоб не писати std::vector<unsigned char>
 typedef std::vector<unsigned char> byte_vector;
 
@@ -42,7 +40,7 @@ inline void write_file_native(const std::string& filepath, const byte_vector& da
     file.write(reinterpret_cast<const char*>(data.data()), data.size());
 }
 
-// --- ФУНКЦІЇ ДЛЯ КОНТРОЛЬНИХ СУМ (працюють з .NET Streams) ---
+// --- ФУНКЦІЇ ДЛЯ КОНТРОЛЬНИХ СУМ  ---
 
 inline String^ ComputeHash(Stream^ stream, HashAlgorithm^ hasher) {
     array<Byte>^ hash = hasher->ComputeHash(stream);
@@ -69,7 +67,7 @@ inline String^ ComputeCrc32(Stream^ stream) {
 }
 
 
-// --- ГОЛОВНА ФУНКЦІЯ ПАТЧИНГУ (НОВА) ---
+// --- ГОЛОВНА ФУНКЦІЯ ПАТЧИНГУ ---
 
 // Ця функція застосовує один будь-який патч (IPS, BPS, ASM)
 inline byte_vector ApplySinglePatch(const byte_vector& source_rom, String^ patchPath, bool ignoreChecksums, String^ applicationPath) {
