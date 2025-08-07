@@ -29,7 +29,6 @@ jobs:
       run: |
         mkdir release
         cp x64/Release/${{ env.EXECUTABLE_NAME }} release/
-        cp dependencies/asar.exe release/
 
     - name: Create a ZIP archive
       run: Compress-Archive -Path release\* -DestinationPath ${{ env.ARTIFACT_NAME }}.zip
