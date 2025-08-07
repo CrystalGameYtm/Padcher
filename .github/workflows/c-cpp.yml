@@ -47,7 +47,7 @@ jobs:
         
         # Налаштування релізу
         tag_name: dev
-        name: "Padcher Dev Build 
+        name: "Padcher Dev Build"
         body: "This is an automated development build from the latest commit. Contains Padcher.exe and all required dependencies."
         prerelease: true
         overwrite: true
