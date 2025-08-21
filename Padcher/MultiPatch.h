@@ -63,9 +63,9 @@ namespace Padcher {
 	private: System::Windows::Forms::Label^ label1;
 	private: System::Windows::Forms::Button^ buttonLoadProject;
 	private: System::Windows::Forms::TextBox^ projectPathTextBox;
-	private: System::Windows::Forms::ComboBox^ comboBox1;
-	private: System::Windows::Forms::Button^ button2;
-	private: System::Windows::Forms::Label^ label2;
+
+
+
 	private: System::Windows::Forms::Button^ buttonSaveProject;
 
 
@@ -92,9 +92,6 @@ namespace Padcher {
 			   this->label1 = (gcnew System::Windows::Forms::Label());
 			   this->buttonLoadProject = (gcnew System::Windows::Forms::Button());
 			   this->projectPathTextBox = (gcnew System::Windows::Forms::TextBox());
-			   this->comboBox1 = (gcnew System::Windows::Forms::ComboBox());
-			   this->button2 = (gcnew System::Windows::Forms::Button());
-			   this->label2 = (gcnew System::Windows::Forms::Label());
 			   this->buttonSaveProject = (gcnew System::Windows::Forms::Button());
 			   (cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->dataGridView1))->BeginInit();
 			   this->groupBox1->SuspendLayout();
@@ -114,14 +111,14 @@ namespace Padcher {
 			   this->dataGridView1->ReadOnly = true;
 			   this->dataGridView1->RowHeadersVisible = false;
 			   this->dataGridView1->SelectionMode = System::Windows::Forms::DataGridViewSelectionMode::FullRowSelect;
-			   this->dataGridView1->Size = System::Drawing::Size(660, 277);
+			   this->dataGridView1->Size = System::Drawing::Size(660, 295);
 			   this->dataGridView1->TabIndex = 0;
 			   // 
 			   // buttonAddPatches
 			   // 
 			   this->buttonAddPatches->Anchor = static_cast<System::Windows::Forms::AnchorStyles>((System::Windows::Forms::AnchorStyles::Top | System::Windows::Forms::AnchorStyles::Right));
 			   this->buttonAddPatches->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 9.75F));
-			   this->buttonAddPatches->Location = System::Drawing::Point(522, 295);
+			   this->buttonAddPatches->Location = System::Drawing::Point(522, 313);
 			   this->buttonAddPatches->Name = L"buttonAddPatches";
 			   this->buttonAddPatches->Size = System::Drawing::Size(150, 23);
 			   this->buttonAddPatches->TabIndex = 2;
@@ -266,7 +263,7 @@ namespace Padcher {
 			   // buttonClearList
 			   // 
 			   this->buttonClearList->Anchor = static_cast<System::Windows::Forms::AnchorStyles>((System::Windows::Forms::AnchorStyles::Top | System::Windows::Forms::AnchorStyles::Right));
-			   this->buttonClearList->Location = System::Drawing::Point(396, 295);
+			   this->buttonClearList->Location = System::Drawing::Point(396, 313);
 			   this->buttonClearList->Name = L"buttonClearList";
 			   this->buttonClearList->Size = System::Drawing::Size(119, 23);
 			   this->buttonClearList->TabIndex = 19;
@@ -308,35 +305,6 @@ namespace Padcher {
 			   this->projectPathTextBox->Size = System::Drawing::Size(500, 26);
 			   this->projectPathTextBox->TabIndex = 20;
 			   // 
-			   // comboBox1
-			   // 
-			   this->comboBox1->FormattingEnabled = true;
-			   this->comboBox1->Location = System::Drawing::Point(117, 294);
-			   this->comboBox1->Name = L"comboBox1";
-			   this->comboBox1->Size = System::Drawing::Size(121, 21);
-			   this->comboBox1->TabIndex = 23;
-			   // 
-			   // button2
-			   // 
-			   this->button2->Location = System::Drawing::Point(244, 295);
-			   this->button2->Name = L"button2";
-			   this->button2->Size = System::Drawing::Size(146, 23);
-			   this->button2->TabIndex = 24;
-			   this->button2->Text = L"Delete Patch in List";
-			   this->button2->UseVisualStyleBackColor = true;
-			   this->button2->Click += gcnew System::EventHandler(this, &MultiPatch::button2_Click);
-			   // 
-			   // label2
-			   // 
-			   this->label2->Anchor = static_cast<System::Windows::Forms::AnchorStyles>((System::Windows::Forms::AnchorStyles::Bottom | System::Windows::Forms::AnchorStyles::Left));
-			   this->label2->AutoSize = true;
-			   this->label2->Font = (gcnew System::Drawing::Font(L"Microsoft Sans Serif", 12));
-			   this->label2->Location = System::Drawing::Point(12, 295);
-			   this->label2->Name = L"label2";
-			   this->label2->Size = System::Drawing::Size(99, 20);
-			   this->label2->TabIndex = 22;
-			   this->label2->Text = L"Select Patch";
-			   // 
 			   // buttonSaveProject
 			   // 
 			   this->buttonSaveProject->Anchor = static_cast<System::Windows::Forms::AnchorStyles>((System::Windows::Forms::AnchorStyles::Bottom | System::Windows::Forms::AnchorStyles::Right));
@@ -355,9 +323,6 @@ namespace Padcher {
 			   this->BackColor = System::Drawing::Color::Gainsboro;
 			   this->ClientSize = System::Drawing::Size(684, 555);
 			   this->Controls->Add(this->buttonSaveProject);
-			   this->Controls->Add(this->button2);
-			   this->Controls->Add(this->comboBox1);
-			   this->Controls->Add(this->label2);
 			   this->Controls->Add(this->label1);
 			   this->Controls->Add(this->buttonLoadProject);
 			   this->Controls->Add(this->projectPathTextBox);
@@ -491,66 +456,70 @@ namespace Padcher {
 			outputPathTextBox->Text = sfd->FileName;
 		}
 	}
+		   private: void LoadProject(String^ projectFilePath) {
+				   try {
+					   // 1. Створення нового об'єкту проєкту та завантаження XML
+					   currentProject = gcnew PadcherPack(); // Переконайтесь, що PadcherPack.h підключено
+					   System::Xml::XmlDocument^ doc = gcnew System::Xml::XmlDocument();
+					   doc->Load(projectFilePath);
 
+					   // 2. Завантаження інформації про базовий ROM
+					   System::Xml::XmlNode^ romNode = doc->SelectSingleNode("/PadcherPack/BaseRom");
+
+					   // ==> ОСЬ ТУТ ВИПРАВЛЕННЯ <==
+					   if (romNode == nullptr) throw gcnew System::Exception("BaseRom node not found in project file.");
+
+					   currentProject->BaseRomFileName = romNode->Attributes["FileName"]->Value;
+					   String^ projectDir = Path::GetDirectoryName(projectFilePath);
+					   currentProject->FullBaseRomPath = Path::Combine(projectDir, currentProject->BaseRomFileName);
+					   InitialRomPath = currentProject->FullBaseRomPath; // InitialRomPath - це член класу MultiPatch
+
+					   if (!File::Exists(InitialRomPath)) {
+						   MessageBox::Show("Base ROM '" + currentProject->BaseRomFileName + "' not found in the project folder. Please make sure it's in the same directory as the .padpack file.", "Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
+						   return;
+					   }
+
+					   // 3. Завантаження компонентів (патчів)
+					   dataGridView1->Rows->Clear();
+					   System::Xml::XmlNodeList^ componentNodes = doc->SelectNodes("/PadcherPack/Components/Component");
+					   for each(System::Xml::XmlNode ^ node in componentNodes) {
+						   PatchComponent^ component = gcnew PatchComponent();
+						   component->FileName = node->Attributes["FileName"]->Value;
+						   component->Type = node->Attributes["Type"]->Value;
+
+						   int rowId = dataGridView1->Rows->Add();
+						   DataGridViewRow^ row = dataGridView1->Rows[rowId];
+						   row->Cells["Num"]->Value = rowId + 1;
+						   row->Cells["Status"]->Value = "Loaded";
+
+						   if (component->Type == "embedded") {
+							   component->Base64Data = node->InnerText;
+							   row->Cells["PatchPath"]->Value = component->FileName + " (embedded)";
+						   }
+						   else { // external
+							   component->RelativePath = node->Attributes["RelativePath"]->Value;
+							   row->Cells["PatchPath"]->Value = Path::Combine(projectDir, component->RelativePath);
+						   }
+						   currentProject->Components->Add(component);
+					   }
+
+					   projectPathTextBox->Text = projectFilePath;
+					   MessageBox::Show("Project loaded successfully.", "Info", MessageBoxButtons::OK, MessageBoxIcon::Information);
+				   }
+				   catch (System::Exception^ ex) { // <== І ТУТ ТЕЖ System::Exception
+					   MessageBox::Show("Failed to load project:\n" + ex->Message, "Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
+					   currentProject = nullptr;
+				   }
+			   }
 	private: System::Void buttonLoadProject_Click(System::Object^ sender, System::EventArgs^ e) {
 		OpenFileDialog^ ofd = gcnew OpenFileDialog();
 		ofd->Filter = "Padcher Pack|*.padpack";
 		ofd->Title = "Open Padcher Pack";
-		if (ofd->ShowDialog() != System::Windows::Forms::DialogResult::OK) {
-			return; // Користувач скасував
-		}
 
-		try {
-			// 1. Створення нового об'єкту проєкту та завантаження XML
-			currentProject = gcnew PadcherPack();
-			System::Xml::XmlDocument^ doc = gcnew System::Xml::XmlDocument();
-			doc->Load(ofd->FileName);
-
-			// 2. Завантаження інформації про базовий ROM
-			System::Xml::XmlNode^ romNode = doc->SelectSingleNode("/PadcherPack/BaseRom");
-			if (romNode == nullptr) throw gcnew Exception("BaseRom node not found in project file.");
-
-			currentProject->BaseRomFileName = romNode->Attributes["FileName"]->Value;
-			String^ projectDir = Path::GetDirectoryName(ofd->FileName);
-			currentProject->FullBaseRomPath = Path::Combine(projectDir, currentProject->BaseRomFileName);
-			InitialRomPath = currentProject->FullBaseRomPath;
-
-			if (!File::Exists(InitialRomPath)) {
-				MessageBox::Show("Base ROM '" + currentProject->BaseRomFileName + "' not found in the project folder. Please make sure it's in the same directory as the .padpack file.", "Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
-				return;
-			}
-
-			// 3. Завантаження компонентів (патчів)
-			dataGridView1->Rows->Clear();
-			System::Xml::XmlNodeList^ componentNodes = doc->SelectNodes("/PadcherPack/Components/Component");
-			for each (System::Xml::XmlNode ^ node in componentNodes) {
-				PatchComponent^ component = gcnew PatchComponent();
-				component->FileName = node->Attributes["FileName"]->Value;
-				component->Type = node->Attributes["Type"]->Value;
-
-				int rowId = dataGridView1->Rows->Add();
-				DataGridViewRow^ row = dataGridView1->Rows[rowId];
-				row->Cells["Num"]->Value = rowId + 1;
-				row->Cells["Status"]->Value = "Loaded";
-
-				// --- Розрізнення типів ---
-				if (component->Type == "embedded") {
-					component->Base64Data = node->InnerText;
-					row->Cells["PatchPath"]->Value = component->FileName + " (embedded)";
-				}
-				else if (component->Type == "external") {
-					component->RelativePath = node->Attributes["RelativePath"]->Value;
-					row->Cells["PatchPath"]->Value = Path::Combine(projectDir, component->RelativePath);
-				}
-				currentProject->Components->Add(component);
-			}
-
-			projectPathTextBox->Text = ofd->FileName;
-			MessageBox::Show("Project loaded successfully.", "Info", MessageBoxButtons::OK, MessageBoxIcon::Information);
-		}
-		catch (Exception^ ex) {
-			MessageBox::Show("Failed to load project:\n" + ex->Message, "Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
-			currentProject = nullptr;
+		if (ofd->ShowDialog() == System::Windows::Forms::DialogResult::OK) {
+			// Все, що робить цей метод - це відкриває діалог
+			// і передає вибраний файл у наш новий метод LoadProject.
+			LoadProject(ofd->FileName);
 		}
 	}
 		   /// <summary>
@@ -758,32 +727,42 @@ namespace Padcher {
 			   }
 		   }
 		   private: System::Void MultiPatch_DragDrop(System::Object^ sender, System::Windows::Forms::DragEventArgs^ e) {
-			   // Отримуємо масив шляхів до перетягнутих файлів
 			   array<String^>^ files = (array<String^>^)e->Data->GetData(DataFormats::FileDrop);
 
-			   // Проходимо по кожному файлу і визначаємо, що це - ROM чи патч
+			   // Створюємо список тільки для патчів
+			   List<String^>^ patchFiles = gcnew List<String^>();
+
 			   for each(String ^ file in files) {
 				   String^ extension = Path::GetExtension(file)->ToLower();
 
-				   // Перевірка на розширення ROM-файлів
-				   if (extension == ".sfc" || extension == ".smc" || extension == ".gba" ||
-					   extension == ".gb" || extension == ".gbc" || extension == ".nes" || extension == ".md")
-				   {
-					   projectPathTextBox->Text = file;
-					   UpdateChecksums(file); // Оновлюємо чексуми, як при натисканні кнопки
+				   // ВИПАДОК 1: Перетягнули файл проєкту .padpack
+				   if (extension == ".padpack") {
+					   // Якщо перетягнули кілька файлів, завантажуємо тільки перший проєкт
+					   LoadProject(file);
+					   return; // Виходимо, оскільки проєкт завантажено
 				   }
-				   // Перевірка на розширення патчів
-				   else if (extension == ".ips" || extension == ".bps" || extension == ".asm")
-				   {
-					   dataGridView1->Text = file;
-					   // Автоматично генеруємо ім'я для вихідного файлу, як у вашому коді
-					   String^ romPath = projectPathTextBox->Text;
-					   if (!String::IsNullOrEmpty(romPath) && File::Exists(romPath)) {
-						   String^ patchDir = Path::GetDirectoryName(file);
-						   String^ patchNameWithoutExt = Path::GetFileNameWithoutExtension(file);
-						   String^ romExtension = Path::GetExtension(romPath);
-						   outputPathTextBox->Text = Path::Combine(patchDir, patchNameWithoutExt + romExtension);
-					   }
+				   // ВИПАДОК 2: Перетягнули патч
+				   else if (extension == ".ips" || extension == ".bps" || extension == ".asm") {
+					   patchFiles->Add(file);
+				   }
+				   // Інші типи файлів (наприклад, ROM'и) просто ігноруємо на цій формі
+			   }
+
+			   // Якщо були перетягнуті патчі, додаємо їх у таблицю
+			   if (patchFiles->Count > 0) {
+				   // Якщо до цього був завантажений проєкт, скидаємо його,
+				   // бо користувач почав збирати новий набір патчів вручну.
+				   if (currentProject != nullptr) {
+					   currentProject = nullptr;
+					   projectPathTextBox->Text = "(Project cleared)";
+				   }
+
+				   for each(String ^ patchFile in patchFiles) {
+					   int rowId = dataGridView1->Rows->Add();
+					   DataGridViewRow^ row = dataGridView1->Rows[rowId];
+					   row->Cells["Num"]->Value = dataGridView1->Rows->Count; // Порядковий номер
+					   row->Cells["PatchPath"]->Value = patchFile;
+					   row->Cells["Status"]->Value = "Pending";
 				   }
 			   }
 		   }
