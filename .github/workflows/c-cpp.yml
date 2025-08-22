@@ -6,31 +6,60 @@ on:
   pull_request:
     branches: [ "master" ]
 
+env:
+  SOLUTION_NAME: Padcher.sln
+  EXECUTABLE_NAME: Padcher.exe
+  ARTIFACT_NAME: Padcher-Win-x64
+
 jobs:
-  build:
+  build-and-release:
     runs-on: windows-latest
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
-    - name: Build Solution
-      run: msbuild.exe Padcher.sln /p:Configuration=Debug
-    - name: Upload Artifact
+
+    - name: Build Solution in Release mode
+      run: msbuild.exe ${{ env.SOLUTION_NAME }} /p:Configuration=Release /p:Platform=x64
+
+    - name: Prepare release files
+      run: |
+        mkdir release
+        cp x64/Release/${{ env.EXECUTABLE_NAME }} release/
+
+    - name: Create a ZIP archive
+      run: Compress-Archive -Path release\* -DestinationPath ${{ env.ARTIFACT_NAME }}.zip
+
+    - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: Padcher-Executable
-        path: x64/Debug/Padcher.exe
-    - name: Create Release and Upload Asset
+        name: ${{ env.ARTIFACT_NAME }}
+        path: ${{ env.ARTIFACT_NAME }}.zip
+    
+    - name: Get commit information
+      id: commit
+      run: |
+        echo "sha_short=$(echo ${{ github.sha }} | cut -c1-7)" >> $env:GITHUB_OUTPUT
+        echo "message=$(echo '${{ github.event.head_commit.message }}' | head -n 1)" >> $env:GITHUB_OUTPUT
+
+    - name: Create/Update Development Release
+      if: github.event_name == 'push'
       uses: softprops/action-gh-release@v2
       with:
-        # Шлях до файлів, які потрібно завантажити.
-        # Дія автоматично видалить старий Patcher.exe і завантажить новий.
-        files: x64/Debug/Padcher.exe
-        
-        # Решта ваших параметрів залишаються
+        files: ${{ env.ARTIFACT_NAME }}.zip
         tag_name: dev
-        name: "Dev Build"
-        body: "Auto Build Devoloper Build."
+        name: "Dev Build | ${{ steps.commit.outputs.sha_short }} | ${{ steps.commit.outputs.message }}"
+        body: |
+          Automated development build from the latest commit. Contains Padcher.exe and all required dependencies.
+
+          **Commit:** [${{ steps.commit.outputs.sha_short }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
+          **Full Message:**
+          ```
+          ${{ github.event.head_commit.message }}
+          ```
         prerelease: true
+        draft: false
+        overwrite: true
