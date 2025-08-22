@@ -1,21 +1,21 @@
 #pragma once
-// --- Підключення необхідних файлів ---
-#include "PatcherLogic.h"      // Містить ApplySinglePatch, read/write_file_native тощо
-#include "bps_patcher.h"       // Містить apply_bps_patch та create_bps_patch
-#include "PadcherPack.h"    // Містить класи для роботи з проєктом (створіть цей файл)
+// --- РџС–РґРєР»СЋС‡РµРЅРЅСЏ РЅРµРѕР±С…С–РґРЅРёС… С„Р°Р№Р»С–РІ ---
+#include "PatcherLogic.h"      // РњС–СЃС‚РёС‚СЊ ApplySinglePatch, read/write_file_native С‚РѕС‰Рѕ
+#include "bps_patcher.h"       // РњС–СЃС‚РёС‚СЊ apply_bps_patch С‚Р° create_bps_patch
+#include "PadcherPack.h"    // РњС–СЃС‚РёС‚СЊ РєР»Р°СЃРё РґР»СЏ СЂРѕР±РѕС‚Рё Р· РїСЂРѕС”РєС‚РѕРј (СЃС‚РІРѕСЂС–С‚СЊ С†РµР№ С„Р°Р№Р»)
 
 namespace Padcher {
 
-	// --- Підключення необхідних просторів імен ---
+	// --- РџС–РґРєР»СЋС‡РµРЅРЅСЏ РЅРµРѕР±С…С–РґРЅРёС… РїСЂРѕСЃС‚РѕСЂС–РІ С–РјРµРЅ ---
 	using namespace System;
 	using namespace System::ComponentModel;
 	using namespace System::Collections;
-	using namespace System::Collections::Generic; // Для List<>
+	using namespace System::Collections::Generic; // Р”Р»СЏ List<>
 	using namespace System::Windows::Forms;
 	using namespace System::Data;
 	using namespace System::Drawing;
 	using namespace System::IO;
-	using namespace System::Security::Cryptography; // Для хешів
+	using namespace System::Security::Cryptography; // Р”Р»СЏ С…РµС€С–РІ
 	using namespace msclr::interop;
 
 	public ref class MultiPatch : public System::Windows::Forms::Form
@@ -25,11 +25,40 @@ namespace Padcher {
 
 		MultiPatch(void)
 		{
-			InitializeComponent();
-			this->Load += gcnew System::EventHandler(this, &MultiPatch::MultiPatch_Load);
+			InitializeComponent(); 
+			dataGridView1->Columns->Clear();
+
+			DataGridViewCheckBoxColumn^ checkColumn = gcnew DataGridViewCheckBoxColumn();
+			checkColumn->Name = "Enabled";
+			checkColumn->HeaderText = L"вњ”пёЏ";
+			checkColumn->Width = 40;
+			dataGridView1->Columns->Add(checkColumn);
+
+			dataGridView1->Columns->Add("Num", "#");
+			dataGridView1->Columns["Num"]->Width = 40;
+			dataGridView1->Columns["Num"]->ReadOnly = true;
+
+			dataGridView1->Columns->Add("PatchName", "Patch Name");
+			dataGridView1->Columns["PatchName"]->AutoSizeMode = DataGridViewAutoSizeColumnMode::Fill;
+			dataGridView1->Columns["PatchName"]->ReadOnly = true;
+
+			DataGridViewComboBoxColumn^ typeColumn = gcnew DataGridViewComboBoxColumn();
+			typeColumn->Name = "PatchType";
+			typeColumn->HeaderText = "Type";
+			typeColumn->Items->Add("Main");
+			typeColumn->Items->Add("Optional");
+			typeColumn->DefaultCellStyle->NullValue = "Main";
+			typeColumn->Width = 100;
+			dataGridView1->Columns->Add(typeColumn);
+
+			dataGridView1->Columns->Add("FullPath", "Full Path");
+			dataGridView1->Columns["FullPath"]->Visible = false;
+			dataGridView1->Columns->Add("Status", "Status");
 			this->AllowDrop = true;
 			this->DragEnter += gcnew System::Windows::Forms::DragEventHandler(this, &MultiPatch::MultiPatch_DragEnter);
 			this->DragDrop += gcnew System::Windows::Forms::DragEventHandler(this, &MultiPatch::MultiPatch_DragDrop);
+
+			currentProject = nullptr;
 		}
 
 	protected:
@@ -42,7 +71,7 @@ namespace Padcher {
 		}
 
 	private:
-		// --- Змінні для керування проєктом ---
+		// --- Р—РјС–РЅРЅС– РґР»СЏ РєРµСЂСѓРІР°РЅРЅСЏ РїСЂРѕС”РєС‚РѕРј ---
 		PadcherPack^ currentProject;
 
 	private: System::Windows::Forms::DataGridView^ dataGridView1;
@@ -347,41 +376,41 @@ namespace Padcher {
 		   }
 #pragma endregion
 
-		   // --- ДОПОМІЖНІ ФУНКЦІЇ ---
+		   // --- Р”РћРџРћРњР†Р–РќР† Р¤РЈРќРљР¦Р†Р‡ ---
 
 		   /// <summary>
-		   /// Застосовує один патч, дані якого передано як масив байтів.
+		   /// Р—Р°СЃС‚РѕСЃРѕРІСѓС” РѕРґРёРЅ РїР°С‚С‡, РґР°РЅС– СЏРєРѕРіРѕ РїРµСЂРµРґР°РЅРѕ СЏРє РјР°СЃРёРІ Р±Р°Р№С‚С–РІ.
 		   /// </summary>
 	private: byte_vector ApplySinglePatchFromData(byte_vector currentRomData, array<Byte>^ patchData, String^ patchFileName, bool ignoreChecksums) {
 		if (patchFileName->EndsWith(".bps", StringComparison::OrdinalIgnoreCase)) {
-			// Конвертуємо .NET масив байт у std::vector<uint8_t>
+			// РљРѕРЅРІРµСЂС‚СѓС”РјРѕ .NET РјР°СЃРёРІ Р±Р°Р№С‚ Сѓ std::vector<uint8_t>
 			byte_vector patch_vec(patchData->Length);
 			System::Runtime::InteropServices::Marshal::Copy(patchData, 0, (IntPtr)patch_vec.data(), patchData->Length);
 
 			return apply_bps_patch(currentRomData, patch_vec, !ignoreChecksums);
 		}
-		// Тут можна додати логіку для IPS, ASM тощо, якщо потрібно
+		// РўСѓС‚ РјРѕР¶РЅР° РґРѕРґР°С‚Рё Р»РѕРіС–РєСѓ РґР»СЏ IPS, ASM С‚РѕС‰Рѕ, СЏРєС‰Рѕ РїРѕС‚СЂС–Р±РЅРѕ
 		else {
 			throw gcnew NotSupportedException("Patch type for '" + patchFileName + "' is not supported for in-memory patching yet.");
 		}
 	}
 
 		   /// <summary>
-		   /// Позначає помилку в таблиці.
+		   /// РџРѕР·РЅР°С‡Р°С” РїРѕРјРёР»РєСѓ РІ С‚Р°Р±Р»РёС†С–.
 		   /// </summary>
 	private: void MarkErrorInGrid() {
-		for each (DataGridViewRow ^ row in dataGridView1->Rows) {
-			if (row->Cells["Status"]->Value->ToString() == "Applying...") {
-				row->Cells["Status"]->Value = "ERROR";
-				row->Cells["Status"]->Style->ForeColor = Color::Red;
-				row->Cells["Status"]->Style->Font = gcnew System::Drawing::Font(this->Font, FontStyle::Bold);
+		for each (DataGridViewRow ^ newRow in dataGridView1->Rows) {
+			if (newRow->Cells["Status"]->Value->ToString() == "Applying...") {
+				newRow->Cells["Status"]->Value = "ERROR";
+				newRow->Cells["Status"]->Style->ForeColor = Color::Red;
+				newRow->Cells["Status"]->Style->Font = gcnew System::Drawing::Font(this->Font, FontStyle::Bold);
 				break;
 			}
 		}
 	}
 
 		   /// <summary>
-		   /// Оновлює інформацію про контрольні суми для файлу.
+		   /// РћРЅРѕРІР»СЋС” С–РЅС„РѕСЂРјР°С†С–СЋ РїСЂРѕ РєРѕРЅС‚СЂРѕР»СЊРЅС– СЃСѓРјРё РґР»СЏ С„Р°Р№Р»Сѓ.
 		   /// </summary>
 	private: void UpdateChecksums(String^ filePath) {
 		if (!File::Exists(filePath)) {
@@ -402,9 +431,10 @@ namespace Padcher {
 		}
 	}
 
-		   // --- ОБРОБНИКИ ПОДІЙ ---
+		   // --- РћР‘Р РћР‘РќРРљР РџРћР”Р†Р™ ---
 
 	private: System::Void MultiPatch_Load(System::Object^ sender, System::EventArgs^ e) {
+		 MessageBox::Show("MultiPatch_Load");
 		dataGridView1->Columns->Clear();
 		dataGridView1->Columns->Add("Num", "#");
 		dataGridView1->Columns->Add("PatchPath", "Patch File");
@@ -414,39 +444,46 @@ namespace Padcher {
 		dataGridView1->Columns["PatchPath"]->AutoSizeMode = DataGridViewAutoSizeColumnMode::Fill;
 		dataGridView1->Columns["Status"]->Width = 120;
 
-		// Скидаємо проєкт при завантаженні
+		// РЎРєРёРґР°С”РјРѕ РїСЂРѕС”РєС‚ РїСЂРё Р·Р°РІР°РЅС‚Р°Р¶РµРЅРЅС–
 		currentProject = nullptr;
 	}
 
 		   /// <summary>
-		   /// Додає патчі з файлової системи до списку. Це початковий етап створення проєкту.
+		   /// Р”РѕРґР°С” РїР°С‚С‡С– Р· С„Р°Р№Р»РѕРІРѕС— СЃРёСЃС‚РµРјРё РґРѕ СЃРїРёСЃРєСѓ. Р¦Рµ РїРѕС‡Р°С‚РєРѕРІРёР№ РµС‚Р°Рї СЃС‚РІРѕСЂРµРЅРЅСЏ РїСЂРѕС”РєС‚Сѓ.
 		   /// </summary>
 	private: System::Void buttonAddPatches_Click(System::Object^ sender, System::EventArgs^ e) {
 		OpenFileDialog^ ofd = gcnew OpenFileDialog();
 		ofd->Multiselect = true;
 		ofd->Title = "Select patch files in the desired order";
-		ofd->Filter = "BPS Patches (*.bps)|*.bps|All Patches (*.ips;*.bps;*.asm)|*.ips;*.bps;*.asm|All files (*.*)|*.*";
+		ofd->Filter = "All Patches (*.ips;*.bps;*.asm)|*.ips;*.bps;*.asm|All files (*.*)|*.*";
 
 		if (ofd->ShowDialog() == System::Windows::Forms::DialogResult::OK) {
-			for each (String ^ patchFile in ofd->FileNames) {
-				int rowId = dataGridView1->Rows->Add();
-				DataGridViewRow^ row = dataGridView1->Rows[rowId];
-				row->Cells["Num"]->Value = rowId + 1;
-				row->Cells["PatchPath"]->Value = patchFile;
-				row->Cells["Status"]->Value = "Pending";
+			for each(String ^ patchFile in ofd->FileNames) {
+
+				// ==> РћРЎР¬ РўРЈРў Р’РРџР РђР’Р›Р•РќРќРЇ <==
+				// РџСЂРѕСЃС‚Рѕ РїРѕС‡РёРЅР°С”РјРѕ Р· РѕРіРѕР»РѕС€РµРЅРЅСЏ РЅРѕРІРѕС— Р·РјС–РЅРЅРѕС—
+				int newRowIndex = dataGridView1->Rows->Add();
+				DataGridViewRow^ newRow = dataGridView1->Rows[newRowIndex];
+
+				newRow->Cells["Enabled"]->Value = true;
+
+				newRow->Cells["Num"]->Value = dataGridView1->Rows->Count;
+				newRow->Cells["PatchName"]->Value = Path::GetFileName(patchFile);
+				newRow->Cells["PatchType"]->Value = "Main";
+				newRow->Cells["FullPath"]->Value = patchFile;
 			}
 		}
 	}
 
 		   /// <summary>
-		   /// Очищує список патчів у таблиці.
+		   /// РћС‡РёС‰СѓС” СЃРїРёСЃРѕРє РїР°С‚С‡С–РІ Сѓ С‚Р°Р±Р»РёС†С–.
 		   /// </summary>
 	private: System::Void buttonClearList_Click(System::Object^ sender, System::EventArgs^ e) {
 		dataGridView1->Rows->Clear();
 	}
 
 		   /// <summary>
-		   /// Кнопка для застарілого функціоналу вибору файлу для збереження пропатченого ROM.
+		   /// РљРЅРѕРїРєР° РґР»СЏ Р·Р°СЃС‚Р°СЂС–Р»РѕРіРѕ С„СѓРЅРєС†С–РѕРЅР°Р»Сѓ РІРёР±РѕСЂСѓ С„Р°Р№Р»Сѓ РґР»СЏ Р·Р±РµСЂРµР¶РµРЅРЅСЏ РїСЂРѕРїР°С‚С‡РµРЅРѕРіРѕ ROM.
 		   /// </summary>
 	private: System::Void buttonSelectOutput_Click(System::Object^ sender, System::EventArgs^ e) {
 		SaveFileDialog^ sfd = gcnew SaveFileDialog();
@@ -458,28 +495,28 @@ namespace Padcher {
 	}
 		   private: void LoadProject(String^ projectFilePath) {
 				   try {
-					   // 1. Створення нового об'єкту проєкту та завантаження XML
-					   currentProject = gcnew PadcherPack(); // Переконайтесь, що PadcherPack.h підключено
+					   // 1. РЎС‚РІРѕСЂРµРЅРЅСЏ РЅРѕРІРѕРіРѕ РѕР±'С”РєС‚Сѓ РїСЂРѕС”РєС‚Сѓ С‚Р° Р·Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ XML
+					   currentProject = gcnew PadcherPack(); // РџРµСЂРµРєРѕРЅР°Р№С‚РµСЃСЊ, С‰Рѕ PadcherPack.h РїС–РґРєР»СЋС‡РµРЅРѕ
 					   System::Xml::XmlDocument^ doc = gcnew System::Xml::XmlDocument();
 					   doc->Load(projectFilePath);
 
-					   // 2. Завантаження інформації про базовий ROM
+					   // 2. Р—Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ С–РЅС„РѕСЂРјР°С†С–С— РїСЂРѕ Р±Р°Р·РѕРІРёР№ ROM
 					   System::Xml::XmlNode^ romNode = doc->SelectSingleNode("/PadcherPack/BaseRom");
 
-					   // ==> ОСЬ ТУТ ВИПРАВЛЕННЯ <==
+					   // ==> РћРЎР¬ РўРЈРў Р’РРџР РђР’Р›Р•РќРќРЇ <==
 					   if (romNode == nullptr) throw gcnew System::Exception("BaseRom node not found in project file.");
 
 					   currentProject->BaseRomFileName = romNode->Attributes["FileName"]->Value;
 					   String^ projectDir = Path::GetDirectoryName(projectFilePath);
 					   currentProject->FullBaseRomPath = Path::Combine(projectDir, currentProject->BaseRomFileName);
-					   InitialRomPath = currentProject->FullBaseRomPath; // InitialRomPath - це член класу MultiPatch
+					   InitialRomPath = currentProject->FullBaseRomPath; // InitialRomPath - С†Рµ С‡Р»РµРЅ РєР»Р°СЃСѓ MultiPatch
 
 					   if (!File::Exists(InitialRomPath)) {
 						   MessageBox::Show("Base ROM '" + currentProject->BaseRomFileName + "' not found in the project folder. Please make sure it's in the same directory as the .padpack file.", "Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 						   return;
 					   }
 
-					   // 3. Завантаження компонентів (патчів)
+					   // 3. Р—Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ РєРѕРјРїРѕРЅРµРЅС‚С–РІ (РїР°С‚С‡С–РІ)
 					   dataGridView1->Rows->Clear();
 					   System::Xml::XmlNodeList^ componentNodes = doc->SelectNodes("/PadcherPack/Components/Component");
 					   for each(System::Xml::XmlNode ^ node in componentNodes) {
@@ -506,7 +543,7 @@ namespace Padcher {
 					   projectPathTextBox->Text = projectFilePath;
 					   MessageBox::Show("Project loaded successfully.", "Info", MessageBoxButtons::OK, MessageBoxIcon::Information);
 				   }
-				   catch (System::Exception^ ex) { // <== І ТУТ ТЕЖ System::Exception
+				   catch (System::Exception^ ex) { // <== Р† РўРЈРў РўР•Р– System::Exception
 					   MessageBox::Show("Failed to load project:\n" + ex->Message, "Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 					   currentProject = nullptr;
 				   }
@@ -517,13 +554,13 @@ namespace Padcher {
 		ofd->Title = "Open Padcher Pack";
 
 		if (ofd->ShowDialog() == System::Windows::Forms::DialogResult::OK) {
-			// Все, що робить цей метод - це відкриває діалог
-			// і передає вибраний файл у наш новий метод LoadProject.
+			// Р’СЃРµ, С‰Рѕ СЂРѕР±РёС‚СЊ С†РµР№ РјРµС‚РѕРґ - С†Рµ РІС–РґРєСЂРёРІР°С” РґС–Р°Р»РѕРі
+			// С– РїРµСЂРµРґР°С” РІРёР±СЂР°РЅРёР№ С„Р°Р№Р» Сѓ РЅР°С€ РЅРѕРІРёР№ РјРµС‚РѕРґ LoadProject.
 			LoadProject(ofd->FileName);
 		}
 	}
 		   /// <summary>
-		   /// Зберігає поточний стан (базовий ROM та список патчів) у файл проєкту .padproj
+		   /// Р—Р±РµСЂС–РіР°С” РїРѕС‚РѕС‡РЅРёР№ СЃС‚Р°РЅ (Р±Р°Р·РѕРІРёР№ ROM С‚Р° СЃРїРёСЃРѕРє РїР°С‚С‡С–РІ) Сѓ С„Р°Р№Р» РїСЂРѕС”РєС‚Сѓ .padproj
 		   /// </summary>
 	private: System::Void buttonSaveProject_Click(System::Object^ sender, System::EventArgs^ e) {
 		if (String::IsNullOrEmpty(InitialRomPath) || !File::Exists(InitialRomPath)) {
@@ -535,22 +572,22 @@ namespace Padcher {
 			return;
 		}
 
-		// 2. Діалог збереження файлу
+		// 2. Р”С–Р°Р»РѕРі Р·Р±РµСЂРµР¶РµРЅРЅСЏ С„Р°Р№Р»Сѓ
 		SaveFileDialog^ sfd = gcnew SaveFileDialog();
 		sfd->Filter = "Padcher Pack|*.padpack";
 		sfd->Title = "Save Padcher Pack";
 		sfd->FileName = "MyModPack.padpack";
 		if (sfd->ShowDialog() != System::Windows::Forms::DialogResult::OK) {
-			return; // Користувач скасував
+			return; // РљРѕСЂРёСЃС‚СѓРІР°С‡ СЃРєР°СЃСѓРІР°РІ
 		}
 
 		try {
-			// 3. Створення XML-структури
+			// 3. РЎС‚РІРѕСЂРµРЅРЅСЏ XML-СЃС‚СЂСѓРєС‚СѓСЂРё
 			System::Xml::XmlDocument^ doc = gcnew System::Xml::XmlDocument();
 			System::Xml::XmlElement^ root = doc->CreateElement("PadcherPack");
 			doc->AppendChild(root);
 
-			// 4. Збереження інформації про базовий ROM і копіювання його
+			// 4. Р—Р±РµСЂРµР¶РµРЅРЅСЏ С–РЅС„РѕСЂРјР°С†С–С— РїСЂРѕ Р±Р°Р·РѕРІРёР№ ROM С– РєРѕРїС–СЋРІР°РЅРЅСЏ Р№РѕРіРѕ
 			String^ baseRomFileName = Path::GetFileName(InitialRomPath);
 			System::Xml::XmlElement^ romElement = doc->CreateElement("BaseRom");
 			romElement->SetAttribute("FileName", baseRomFileName);
@@ -559,30 +596,30 @@ namespace Padcher {
 			String^ projectDir = Path::GetDirectoryName(sfd->FileName);
 			String^ newRomPath = Path::Combine(projectDir, baseRomFileName);
 			if (Path::GetFullPath(InitialRomPath)->ToLower() != Path::GetFullPath(newRomPath)->ToLower()) {
-				File::Copy(InitialRomPath, newRomPath, true); // Копіюємо ROM в папку проєкту
+				File::Copy(InitialRomPath, newRomPath, true); // РљРѕРїС–СЋС”РјРѕ ROM РІ РїР°РїРєСѓ РїСЂРѕС”РєС‚Сѓ
 			}
 
-			// 5. Підготовка до збереження патчів
+			// 5. РџС–РґРіРѕС‚РѕРІРєР° РґРѕ Р·Р±РµСЂРµР¶РµРЅРЅСЏ РїР°С‚С‡С–РІ
 			System::Xml::XmlElement^ componentsElement = doc->CreateElement("Components");
 			root->AppendChild(componentsElement);
 
 			String^ asmDirName = Path::GetFileNameWithoutExtension(sfd->FileName) + "_asm_files";
 			String^ asmFullPath = Path::Combine(projectDir, asmDirName);
 
-			// 6. Ітерація по патчах з таблиці та їх збереження
+			// 6. Р†С‚РµСЂР°С†С–СЏ РїРѕ РїР°С‚С‡Р°С… Р· С‚Р°Р±Р»РёС†С– С‚Р° С—С… Р·Р±РµСЂРµР¶РµРЅРЅСЏ
 			for each (DataGridViewRow ^ row in dataGridView1->Rows) {
 				String^ patchOriginalPath = row->Cells["PatchPath"]->Value->ToString();
 
-				// Якщо у рядку вже не шлях, а "embedded", значить, він вже з проєкту, пропускаємо
+				// РЇРєС‰Рѕ Сѓ СЂСЏРґРєСѓ РІР¶Рµ РЅРµ С€Р»СЏС…, Р° "embedded", Р·РЅР°С‡РёС‚СЊ, РІС–РЅ РІР¶Рµ Р· РїСЂРѕС”РєС‚Сѓ, РїСЂРѕРїСѓСЃРєР°С”РјРѕ
 				if (!File::Exists(patchOriginalPath)) continue;
 
 				String^ patchFileName = Path::GetFileName(patchOriginalPath);
 				System::Xml::XmlElement^ componentElement = doc->CreateElement("Component");
 				componentElement->SetAttribute("FileName", patchFileName);
 
-				// --- Розрізнення типів ---
+				// --- Р РѕР·СЂС–Р·РЅРµРЅРЅСЏ С‚РёРїС–РІ ---
 				if (patchFileName->EndsWith(".asm", StringComparison::OrdinalIgnoreCase)) {
-					// Зовнішній патч (.asm)
+					// Р—РѕРІРЅС–С€РЅС–Р№ РїР°С‚С‡ (.asm)
 					componentElement->SetAttribute("Type", "external");
 
 					if (!Directory::Exists(asmFullPath)) {
@@ -601,7 +638,7 @@ namespace Padcher {
 				componentsElement->AppendChild(componentElement);
 			}
 
-			// 7. Збереження XML-файлу
+			// 7. Р—Р±РµСЂРµР¶РµРЅРЅСЏ XML-С„Р°Р№Р»Сѓ
 			doc->Save(sfd->FileName);
 
 			projectPathTextBox->Text = sfd->FileName;
@@ -623,12 +660,12 @@ namespace Padcher {
 			return;
 		}
 
-		// 2. Визначаємо режим роботи: Проєктний чи Прямий Мультипатчинг
+		// 2. Р’РёР·РЅР°С‡Р°С”РјРѕ СЂРµР¶РёРј СЂРѕР±РѕС‚Рё: РџСЂРѕС”РєС‚РЅРёР№ С‡Рё РџСЂСЏРјРёР№ РњСѓР»СЊС‚РёРїР°С‚С‡РёРЅРі
 		bool isProjectMode = (currentProject != nullptr);
 
 		String^ outputFilePath;
 		if (isProjectMode) {
-			// РЕЖИМ ПРОЄКТУ: Експортуємо фінальний BPS
+			// Р Р•Р–РРњ РџР РћР„РљРўРЈ: Р•РєСЃРїРѕСЂС‚СѓС”РјРѕ С„С–РЅР°Р»СЊРЅРёР№ BPS
 			SaveFileDialog^ sfd = gcnew SaveFileDialog();
 			sfd->Filter = "BPS Patch|*.bps";
 			sfd->Title = "Export Final BPS Patch";
@@ -637,7 +674,7 @@ namespace Padcher {
 			outputFilePath = sfd->FileName;
 		}
 		else {
-			// РЕЖИМ МУЛЬТИПАТЧИНГУ: Зберігаємо фінальний ROM
+			// Р Р•Р–РРњ РњРЈР›Р¬РўРРџРђРўР§РРќР“РЈ: Р—Р±РµСЂС–РіР°С”РјРѕ С„С–РЅР°Р»СЊРЅРёР№ ROM
 			if (String::IsNullOrWhiteSpace(outputPathTextBox->Text)) {
 				MessageBox::Show("Please specify an output file path for the patched ROM.", "Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 				return;
@@ -649,25 +686,33 @@ namespace Padcher {
 			}
 		}
 
-		// Блокуємо UI на час роботи
+		// Р‘Р»РѕРєСѓС”РјРѕ UI РЅР° С‡Р°СЃ СЂРѕР±РѕС‚Рё
 		this->Enabled = false;
 		this->Update();
 
 		try {
-			// 3. Завантажуємо оригінальний ROM
+			// 3. Р—Р°РІР°РЅС‚Р°Р¶СѓС”РјРѕ РѕСЂРёРіС–РЅР°Р»СЊРЅРёР№ ROM
 			byte_vector originalRomData = read_file_native(marshal_as<std::string>(InitialRomPath));
 			byte_vector currentRomData = originalRomData;
 
-			// 4. Послідовно застосовуємо патчі
+			// 4. РџРѕСЃР»С–РґРѕРІРЅРѕ Р·Р°СЃС‚РѕСЃРѕРІСѓС”РјРѕ РїР°С‚С‡С–
 			for (int i = 0; i < dataGridView1->Rows->Count; ++i) {
-				DataGridViewRow^ row = dataGridView1->Rows[i];
+				DataGridViewRow^ newRow = dataGridView1->Rows[i];
 
-				row->Cells["Status"]->Value = "Applying...";
-				row->Cells["Status"]->Style->ForeColor = Color::Blue;
+				// !!! Р“РћР›РћР’РќРђ РџР•Р Р•Р’Р†Р РљРђ: С‡Рё СѓРІС–РјРєРЅРµРЅРёР№ РїР°С‚С‡?
+				bool isEnabled = Convert::ToBoolean(newRow->Cells["Enabled"]->Value);
+				if (!isEnabled) {
+					newRow->Cells["Status"]->Value = "Skipped"; // РџРѕР·РЅР°С‡Р°С”РјРѕ, С‰Рѕ РїР°С‚С‡ РїСЂРѕРїСѓС‰РµРЅРѕ
+					newRow->Cells["Status"]->Style->ForeColor = Color::Gray;
+					continue; // РџРµСЂРµС…РѕРґРёРјРѕ РґРѕ РЅР°СЃС‚СѓРїРЅРѕРіРѕ РїР°С‚С‡Р°
+				}
+
+				newRow->Cells["Status"]->Value = "Applying...";
+				newRow->Cells["Status"]->Style->ForeColor = Color::Blue;
 				this->Update();
 
 				if (isProjectMode) {
-					// Беремо дані з проєкту
+					// Р‘РµСЂРµРјРѕ РґР°РЅС– Р· РїСЂРѕС”РєС‚Сѓ
 					PatchComponent^ component = currentProject->Components[i];
 					if (component->Type == "embedded") {
 						array<Byte>^ patchBytes = Convert::FromBase64String(component->Base64Data);
@@ -680,26 +725,29 @@ namespace Padcher {
 					}
 				}
 				else {
-					// Беремо шлях з таблиці
-					String^ patchPath = row->Cells["PatchPath"]->Value->ToString();
+					// Р‘РµСЂРµРјРѕ С€Р»СЏС… Р· РЅР°С€РѕС— РЅРѕРІРѕС— РїСЂРёС…РѕРІР°РЅРѕС— РєРѕР»РѕРЅРєРё "FullPath"
+					String^ patchPath = newRow->Cells["FullPath"]->Value->ToString();
 					currentRomData = ApplySinglePatch(currentRomData, patchPath, ignoreChecksumsCheckbox->Checked, Application::StartupPath);
 				}
-				row->Cells["Status"]->Value = "Done";
-				row->Cells["Status"]->Style->ForeColor = Color::Green;
+
+				newRow->Cells["Status"]->Value = "Done";
+				newRow->Cells["Status"]->Style->ForeColor = Color::Green;
 			}
 
-			// 5. Зберігаємо результат
+			
+
+			// 5. Р—Р±РµСЂС–РіР°С”РјРѕ СЂРµР·СѓР»СЊС‚Р°С‚
 			if (isProjectMode) {
-				// Створюємо та зберігаємо фінальний BPS
+				// РЎС‚РІРѕСЂСЋС”РјРѕ С‚Р° Р·Р±РµСЂС–РіР°С”РјРѕ С„С–РЅР°Р»СЊРЅРёР№ BPS
 				String^ metadata = "Created with Padcher";
 				byte_vector finalBpsData = create_bps_patch(originalRomData, currentRomData, true, marshal_as<std::string>(metadata));
 				write_file_native(marshal_as<std::string>(outputFilePath), finalBpsData);
 				MessageBox::Show("Final BPS patch exported successfully!", "Success", MessageBoxButtons::OK, MessageBoxIcon::Information);
 			}
 			else {
-				// Зберігаємо фінальний ROM
+				// Р—Р±РµСЂС–РіР°С”РјРѕ С„С–РЅР°Р»СЊРЅРёР№ ROM
 				write_file_native(marshal_as<std::string>(outputFilePath), currentRomData);
-				UpdateChecksums(outputFilePath); // Оновлюємо хеші на формі
+				UpdateChecksums(outputFilePath); // РћРЅРѕРІР»СЋС”РјРѕ С…РµС€С– РЅР° С„РѕСЂРјС–
 				MessageBox::Show("All patches applied successfully!", "Success", MessageBoxButtons::OK, MessageBoxIcon::Information);
 			}
 		}
@@ -712,7 +760,7 @@ namespace Padcher {
 			MessageBox::Show("A .NET error occurred during patching:\n" + ex->Message, "Critical Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 		}
 		finally {
-			this->Enabled = true; // Повертаємо доступ до UI
+			this->Enabled = true; // РџРѕРІРµСЂС‚Р°С”РјРѕ РґРѕСЃС‚СѓРї РґРѕ UI
 		}
 	}
 	private: System::Void button2_Click(System::Object^ sender, System::EventArgs^ e) {
@@ -729,40 +777,43 @@ namespace Padcher {
 		   private: System::Void MultiPatch_DragDrop(System::Object^ sender, System::Windows::Forms::DragEventArgs^ e) {
 			   array<String^>^ files = (array<String^>^)e->Data->GetData(DataFormats::FileDrop);
 
-			   // Створюємо список тільки для патчів
+			   // РЎС‚РІРѕСЂСЋС”РјРѕ СЃРїРёСЃРѕРє С‚С–Р»СЊРєРё РґР»СЏ РїР°С‚С‡С–РІ
 			   List<String^>^ patchFiles = gcnew List<String^>();
 
 			   for each(String ^ file in files) {
 				   String^ extension = Path::GetExtension(file)->ToLower();
 
-				   // ВИПАДОК 1: Перетягнули файл проєкту .padpack
+				   // Р’РРџРђР”РћРљ 1: РџРµСЂРµС‚СЏРіРЅСѓР»Рё С„Р°Р№Р» РїСЂРѕС”РєС‚Сѓ .padpack
 				   if (extension == ".padpack") {
-					   // Якщо перетягнули кілька файлів, завантажуємо тільки перший проєкт
+					   // РЇРєС‰Рѕ РїРµСЂРµС‚СЏРіРЅСѓР»Рё РєС–Р»СЊРєР° С„Р°Р№Р»С–РІ, Р·Р°РІР°РЅС‚Р°Р¶СѓС”РјРѕ С‚С–Р»СЊРєРё РїРµСЂС€РёР№ РїСЂРѕС”РєС‚
 					   LoadProject(file);
-					   return; // Виходимо, оскільки проєкт завантажено
+					   return; // Р’РёС…РѕРґРёРјРѕ, РѕСЃРєС–Р»СЊРєРё РїСЂРѕС”РєС‚ Р·Р°РІР°РЅС‚Р°Р¶РµРЅРѕ
 				   }
-				   // ВИПАДОК 2: Перетягнули патч
+				   // Р’РРџРђР”РћРљ 2: РџРµСЂРµС‚СЏРіРЅСѓР»Рё РїР°С‚С‡
 				   else if (extension == ".ips" || extension == ".bps" || extension == ".asm") {
 					   patchFiles->Add(file);
 				   }
-				   // Інші типи файлів (наприклад, ROM'и) просто ігноруємо на цій формі
+				   // Р†РЅС€С– С‚РёРїРё С„Р°Р№Р»С–РІ (РЅР°РїСЂРёРєР»Р°Рґ, ROM'Рё) РїСЂРѕСЃС‚Рѕ С–РіРЅРѕСЂСѓС”РјРѕ РЅР° С†С–Р№ С„РѕСЂРјС–
 			   }
 
-			   // Якщо були перетягнуті патчі, додаємо їх у таблицю
+			   // РЇРєС‰Рѕ Р±СѓР»Рё РїРµСЂРµС‚СЏРіРЅСѓС‚С– РїР°С‚С‡С–, РґРѕРґР°С”РјРѕ С—С… Сѓ С‚Р°Р±Р»РёС†СЋ
 			   if (patchFiles->Count > 0) {
-				   // Якщо до цього був завантажений проєкт, скидаємо його,
-				   // бо користувач почав збирати новий набір патчів вручну.
 				   if (currentProject != nullptr) {
 					   currentProject = nullptr;
 					   projectPathTextBox->Text = "(Project cleared)";
 				   }
 
-				   for each(String ^ patchFile in patchFiles) {
+				   // ==> РћРќРћР’Р›Р•РќРР™ Р¦РРљР› <==
+				   for each (String ^ patchFile in patchFiles) {
 					   int rowId = dataGridView1->Rows->Add();
 					   DataGridViewRow^ row = dataGridView1->Rows[rowId];
-					   row->Cells["Num"]->Value = dataGridView1->Rows->Count; // Порядковий номер
-					   row->Cells["PatchPath"]->Value = patchFile;
-					   row->Cells["Status"]->Value = "Pending";
+
+					   row->Cells["Enabled"]->Value = true;
+					   row->Cells["Num"]->Value = dataGridView1->Rows->Count;
+					   row->Cells["PatchName"]->Value = Path::GetFileName(patchFile);
+					   row->Cells["PatchType"]->Value = "Main";
+					   row->Cells["FullPath"]->Value = patchFile;
+
 				   }
 			   }
 		   }
