@@ -608,14 +608,25 @@ namespace Padcher {
 
 			// 6. Ітерація по патчах з таблиці та їх збереження
 			for each (DataGridViewRow ^ row in dataGridView1->Rows) {
-				String^ patchOriginalPath = row->Cells["PatchPath"]->Value->ToString();
+
+				// ==> ЗМІНА ТУТ <==
+				// Беремо шлях з нової колонки "FullPath"
+				String^ patchOriginalPath = row->Cells["FullPath"]->Value->ToString();
 
 				// Якщо у рядку вже не шлях, а "embedded", значить, він вже з проєкту, пропускаємо
-				if (!File::Exists(patchOriginalPath)) continue;
+				if (!File::Exists(patchOriginalPath)) {
+					// Додаткова перевірка: можливо, це вже завантажений з проєкту патч
+					// Цю логіку можна покращити, але поки що залишимо так
+					continue;
+				}
 
 				String^ patchFileName = Path::GetFileName(patchOriginalPath);
 				System::Xml::XmlElement^ componentElement = doc->CreateElement("Component");
 				componentElement->SetAttribute("FileName", patchFileName);
+
+				// ==> ДОДАМО ЗБЕРЕЖЕННЯ СТАНУ ЧЕКБОКСА І ТИПУ <==
+				componentElement->SetAttribute("Enabled", row->Cells["Enabled"]->Value->ToString());
+				componentElement->SetAttribute("PatchType", row->Cells["PatchType"]->Value->ToString()); 
 
 				// --- Розрізнення типів ---
 				if (patchFileName->EndsWith(".asm", StringComparison::OrdinalIgnoreCase)) {
@@ -817,5 +828,44 @@ namespace Padcher {
 				   }
 			   }
 		   }
+				  private: System::Void dataGridView1_KeyDown(System::Object^ sender, System::Windows::Forms::KeyEventArgs^ e) {
+					  // Перевіряємо, чи була натиснута клавіша Delete або Backspace
+					  if (e->KeyCode == Keys::Delete || e->KeyCode == Keys::Back)
+					  {
+						  // Перевіряємо, чи є виділені рядки
+						  if (dataGridView1->SelectedRows->Count > 0)
+						  {
+							  // Створюємо тимчасовий список для видалення,
+							  // бо не можна видаляти з колекції, по якій ми ітеруємо
+							  List<DataGridViewRow^>^ rowsToRemove = gcnew List<DataGridViewRow^>();
+							  for each (DataGridViewRow ^ row in dataGridView1->SelectedRows)
+							  {
+								  rowsToRemove->Add(row);
+							  }
+
+							  // Тепер видаляємо рядки з основного списку
+							  for each (DataGridViewRow ^ row in rowsToRemove)
+							  {
+								  // Перевіряємо, чи рядок не є "новим" (порожнім) рядком для додавання
+								  if (!row->IsNewRow)
+								  {
+									  dataGridView1->Rows->Remove(row);
+								  }
+							  }
+
+							  // Оновлюємо нумерацію після видалення
+							  UpdateRowNumbers();
+
+							  // Позначаємо, що ми обробили цю клавішу, щоб не було зайвих звуків/дій
+							  e->Handled = true;
+						  }
+					  }
+				  }
+
+private: void UpdateRowNumbers() {
+	for (int i = 0; i < dataGridView1->Rows->Count; i++) {
+		dataGridView1->Rows[i]->Cells["Num"]->Value = i + 1;
+	}
+}
 	};
 }
